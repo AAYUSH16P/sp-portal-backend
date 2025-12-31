@@ -38,15 +38,17 @@ public class CompanyApprovalService : ICompanyApprovalService
         await _repo.ApproveCompanyAsync(companyId, passwordHash);
 
         // 4. Fetch email details
-        var (email, name) = await _repo.GetPrimaryContactAsync(companyId);
+        var contact = await _repo.GetPrimaryContactAsync(companyId);
+
+        var (email, contactName) = contact.Value;
 
         // 5. Send email
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierApproved,
             new Dictionary<string, string>
             {
-                ["SupplierContactName"] = name,
-                ["PortalLink"] = "https://portal.westgate.com/login",
+                ["SupplierContactName"] = contactName,
+                ["PortalLink"] = "https://supplier-portal-frontend-production.up.railway.app/login",
                 ["TemporaryPassword"] = plainPassword
             },
             out var subject);
@@ -59,13 +61,13 @@ public class CompanyApprovalService : ICompanyApprovalService
     {
         await _repo.RejectCompanyAsync(companyId, remark);
 
-        var (email, name) = await _repo.GetPrimaryContactAsync(companyId);
-
+        var contact  = await _repo.GetPrimaryContactAsync(companyId);
+        var (email, contactName) = contact.Value;
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierRejected,
             new Dictionary<string, string>
             {
-                ["SupplierContactName"] = name,
+                ["SupplierContactName"] = contactName,
                 ["Remark"] = remark
             },
             out var subject);

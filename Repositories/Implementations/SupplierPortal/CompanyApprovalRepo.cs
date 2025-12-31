@@ -46,17 +46,19 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
             new { companyId, remark });
     }
 
-    public async Task<(string Email, string ContactName)> GetPrimaryContactAsync(Guid companyId)
+    public async Task<(string Email, string ContactName)?> GetPrimaryContactAsync(Guid companyId)
     {
         using var conn = CreateConnection();
 
-        return await conn.QuerySingleAsync<(string, string)>(
+        return await conn.QuerySingleOrDefaultAsync<(string Email, string ContactName)>(
             @"SELECT email, contact_name
-              FROM company_contacts
-              WHERE company_id = @companyId
-                AND contact_type = 'PRIMARY'",
-            new { companyId });
+          FROM company_contacts
+          WHERE company_id = @companyId
+            AND contact_type = 'PRIMARY'",
+            new { companyId }
+        );
     }
+
     
     public async Task<CompanyLoginDataDto?> GetLoginDataAsync(string email)
     {

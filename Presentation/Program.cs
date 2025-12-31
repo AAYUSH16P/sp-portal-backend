@@ -16,6 +16,7 @@ using Infrastructure.Email;
 using Infrastructure.Templates;
 using Shared;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 //
@@ -175,3 +176,4 @@ static string BuildNpgsqlConnectionString(string databaseUrl)
            $"SSL Mode=Require;" +
            $"Trust Server Certificate=true";
 }
+
