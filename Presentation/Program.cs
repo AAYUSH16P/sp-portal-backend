@@ -1,4 +1,5 @@
 using System.Data;
+using System.Net;
 using Dapper;
 using Npgsql;
 using Hangfire;
@@ -18,50 +19,45 @@ using Shared;
 var builder = WebApplication.CreateBuilder(args);
 
 //
-// =================================================
+// ================================
 // 🚀 Railway PORT binding (MANDATORY)
-// =================================================
+// ================================
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://*:{port}");
 
 //
-// =================================================
-// 🔐 PostgreSQL Connection (Railway + Local SAFE)
-// =================================================
-var connectionString =
-    Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+// ================================
+// 🔐 PostgreSQL Connection (Railway FIXED)
+// ================================
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-// 🔎 TEMP DEBUG (safe to keep)
-Console.WriteLine($"DATABASE_URL visible: {Environment.GetEnvironmentVariable("DATABASE_URL") != null}");
-Console.WriteLine($"DefaultConnection visible: {builder.Configuration.GetConnectionString("DefaultConnection") != null}");
-
-if (string.IsNullOrWhiteSpace(connectionString))
+if (string.IsNullOrWhiteSpace(databaseUrl))
 {
-    throw new Exception("No database connection string found (DATABASE_URL or DefaultConnection)");
+    throw new Exception("DATABASE_URL environment variable is missing");
 }
 
-// Railway requires SSL
-connectionString += ";SSL Mode=Require;Trust Server Certificate=true;Include Error Detail=true";
+var connectionString = BuildNpgsqlConnectionString(databaseUrl);
+
+Console.WriteLine("PostgreSQL connection configured successfully");
 
 //
-// =================================================
+// ================================
 // 📦 Controllers
-// =================================================
+// ================================
 builder.Services.AddControllers();
 
 //
-// =================================================
+// ================================
 // 🗄️ Dapper DB Connection
-// =================================================
+// ================================
 builder.Services.AddScoped<IDbConnection>(_ =>
     new NpgsqlConnection(connectionString)
 );
 
 //
-// =================================================
+// ================================
 // 🧠 Repositories & Services
-// =================================================
+// ================================
 builder.Services.AddScoped<ISupplierRepoInterface, SupplierRepoImplementation>();
 builder.Services.AddScoped<ISupplierServiceInterface, SupplierServiceImplementation>();
 
@@ -83,24 +79,24 @@ builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<ITemplateRenderer, HtmlTemplateRenderer>();
 
 //
-// =================================================
-// 🔥 Hangfire (FIXED – NO SCHEMA LOOP)
-// =================================================
+// ================================
+// 🔥 Hangfire (NO SCHEMA LOOP)
+// ================================
 builder.Services.AddHangfire(config =>
 {
     config.UsePostgreSqlStorage(connectionString, new PostgreSqlStorageOptions
     {
         SchemaName = "hangfire",
-        PrepareSchemaIfNecessary = false
+        PrepareSchemaIfNecessary = false // ✅ CRITICAL
     });
 });
 
 builder.Services.AddHangfireServer();
 
 //
-// =================================================
+// ================================
 // 🌍 CORS
-// =================================================
+// ================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -110,53 +106,72 @@ builder.Services.AddCors(options =>
 });
 
 //
-// =================================================
+// ================================
 // 📘 Swagger
-// =================================================
+// ================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 //
-// =================================================
-// 🧩 Dapper Type Handlers
-// =================================================
+// ================================
+// 🧩 Dapper JSON Type Handlers
+// ================================
 SqlMapper.AddTypeHandler(new JsonListTypeHandler<CompanyContact>());
 SqlMapper.AddTypeHandler(new JsonListTypeHandler<CompanyAddress>());
 SqlMapper.AddTypeHandler(new JsonListTypeHandler<CompanyCertification>());
 
 //
-// =================================================
+// ================================
 // 🚀 Build App
-// =================================================
+// ================================
 var app = builder.Build();
 
 //
-// =================================================
-// 📘 Swagger (ENABLED IN PRODUCTION)
-// =================================================
+// ================================
+// 📘 Swagger (PRODUCTION ENABLED)
+// ================================
 app.UseSwagger();
 app.UseSwaggerUI();
 
 //
-// =================================================
+// ================================
 // 🧭 Hangfire Dashboard
-// =================================================
+// ================================
 app.UseHangfireDashboard("/hangfire");
 
 //
-// =================================================
+// ================================
 // 🌍 Middleware
-// =================================================
+// ================================
 app.UseCors("AllowAll");
 
-// ❌ DO NOT USE HTTPS REDIRECTION ON RAILWAY
+// ❌ DO NOT enable HTTPS redirection on Railway
 // app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.MapControllers();
 
 //
-// =================================================
+// ================================
 // ▶️ Run App
-// =================================================
+// ================================
 app.Run();
+
+
+//
+// ================================
+// 🔧 Helper: Convert DATABASE_URL → Npgsql
+// ================================
+static string BuildNpgsqlConnectionString(string databaseUrl)
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':', 2);
+
+    return $"Host={uri.Host};" +
+           $"Port={uri.Port};" +
+           $"Database={uri.AbsolutePath.TrimStart('/')};" +
+           $"Username={WebUtility.UrlDecode(userInfo[0])};" +
+           $"Password={WebUtility.UrlDecode(userInfo[1])};" +
+           $"SSL Mode=Require;" +
+           $"Trust Server Certificate=true";
+}
