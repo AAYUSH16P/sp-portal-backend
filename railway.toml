@@ -1,0 +1,6 @@
+[build]
+builder = "DOTNET"
+command = "dotnet publish Presentation/Presentation.csproj -c Release -o out"
+
+[start]
+command = "dotnet out/Presentation.dll"
