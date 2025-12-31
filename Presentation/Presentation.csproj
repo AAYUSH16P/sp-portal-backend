@@ -34,4 +34,10 @@
 <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
+    <ItemGroup>
+    <Content Include="EmailTemplates/**/*.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
