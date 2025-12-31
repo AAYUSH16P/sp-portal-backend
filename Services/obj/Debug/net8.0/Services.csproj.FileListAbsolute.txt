@@ -20,13 +20,3 @@
 /Users/aayushraj/Downloads/dynamic/Services/obj/Debug/net8.0/Services.pdb
 /Users/aayushraj/Downloads/dynamic/Services/obj/Debug/net8.0/Services.genruntimeconfig.cache
 /Users/aayushraj/Downloads/dynamic/Services/obj/Debug/net8.0/ref/Services.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.AspNetCore.Hosting.Abstractions.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.Extensions.Hosting.Abstractions.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.AspNetCore.Hosting.Server.Abstractions.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.AspNetCore.Http.Abstractions.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.Extensions.Features.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/System.IO.Pipelines.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.AspNetCore.Http.Features.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.Net.Http.Headers.dll
-/Users/aayushraj/Downloads/dynamic/Services/bin/Debug/net8.0/Microsoft.AspNetCore.Connections.Abstractions.dll

@@ -2403,7 +2403,10 @@
         },
         "runtime": {
           "bin/placeholder/Services.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       },
       "Shared/1.0.0": {
         "type": "project",
