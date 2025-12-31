@@ -74,7 +74,7 @@ var app = builder.Build();
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
