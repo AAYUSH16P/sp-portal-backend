@@ -203,3 +203,4 @@
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/System.ClientModel.dll
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/BCrypt.Net-Next.dll
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/appsettings.Development.json
+/Users/aayushraj/Downloads/dynamic/Presentation/obj/Debug/net8.0/Presentation.sourcelink.json
