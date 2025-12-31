@@ -1,0 +1,15 @@
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/bin/Debug/net8.0/FinancialManagementShared.deps.json
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/bin/Debug/net8.0/FinancialManagementShared.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/bin/Debug/net8.0/FinancialManagementShared.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.GeneratedMSBuildEditorConfig.editorconfig
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.AssemblyInfoInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.AssemblyInfo.cs
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.csproj.CoreCompileInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/refint/FinancialManagementShared.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/ref/FinancialManagementShared.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/FinancialManagementShared.csproj.AssemblyReference.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/bin/Debug/net8.0/FinancialManagementDataAccess.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/bin/Debug/net8.0/FinancialManagementDataAccess.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementShared/obj/Debug/net8.0/Financia.5EA5D959.Up2Date

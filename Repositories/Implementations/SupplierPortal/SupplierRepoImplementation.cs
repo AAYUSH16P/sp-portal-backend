@@ -1,0 +1,624 @@
+﻿using DynamicFormRepo.DynamicFormRepoInterface;
+using System.Data;
+using Shared;
+using Dapper;
+using FinancialManagementDataAccess.Models;
+using Npgsql;
+using Shared.Enum;
+
+namespace DynamicFormRepo.DynamicFormRepoImplementation
+{
+    public class SupplierRepoImplementation : ISupplierRepoInterface
+    {
+        private readonly string _connectionString;
+
+        public SupplierRepoImplementation(IDbConnection db)
+        {
+            _connectionString = db.ConnectionString;
+        }
+
+        private IDbConnection CreateConnection()
+        {
+            return new NpgsqlConnection(_connectionString);
+        }
+        
+      public async Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request)
+{
+    using var conn = CreateConnection();
+    await ((NpgsqlConnection)conn).OpenAsync();
+    using var transaction = conn.BeginTransaction();
+
+    try
+    {
+        // 1️⃣ Insert Company (ALL FIELDS)
+        var companyId = await conn.ExecuteScalarAsync<Guid>(@"
+            INSERT INTO companies
+            (
+                company_name,
+                company_website,
+                business_type,
+                company_size,
+                year_established,
+                company_overview,
+                total_projects_executed,
+                domain_expertise,
+                isapproved,
+                is_sla_signed
+            )
+            VALUES
+            (
+                @CompanyName,
+                @CompanyWebsite,
+                @BusinessType,
+                @CompanySize,
+                @YearEstablished,
+                @CompanyOverview,
+                @TotalProjectsExecuted,
+                @DomainExpertise,
+                FALSE,
+                FALSE
+            )
+            RETURNING id;
+        ", new
+        {
+            request.CompanyName,
+            request.CompanyWebsite,
+            request.BusinessType,
+            request.CompanySize,
+            request.YearEstablished,
+            request.CompanyOverview,
+            TotalProjectsExecuted =  request.ProjectExecuted,
+            request.DomainExpertise
+        }, transaction);
+
+        // 2️⃣ Insert Address
+        await conn.ExecuteAsync(@"
+            INSERT INTO company_addresses
+            (company_id, address_line1, address_line2, city, state, postal_code, country)
+            VALUES
+            (@CompanyId, @AddressLine1, @AddressLine2, @City, @State, @PostalCode, @Country);
+        ", new
+        {
+            CompanyId = companyId,
+            request.AddressLine1,
+            request.AddressLine2,
+            request.City,
+            request.State,
+            request.PostalCode,
+            request.Country
+        }, transaction);
+
+        // 3️⃣ Insert PRIMARY Contact
+        await conn.ExecuteAsync(@"
+            INSERT INTO company_contacts
+            (company_id, contact_type, contact_name, role_designation, email, phone)
+            VALUES
+            (@CompanyId, 'PRIMARY', @Name, @Role, @Email, @Phone);
+        ", new
+        {
+            CompanyId = companyId,
+            Name = request.PrimaryContactName,
+            Role = request.PrimaryContactRole,
+            Email = request.PrimaryContactEmail,
+            Phone = request.PrimaryContactPhone
+        }, transaction);
+
+        // 4️⃣ Insert SECONDARY Contact (ONLY IF PROVIDED)
+        if (!string.IsNullOrWhiteSpace(request.SecondaryContactName))
+        {
+            await conn.ExecuteAsync(@"
+                INSERT INTO company_contacts
+                (company_id, contact_type, contact_name, role_designation, email, phone)
+                VALUES
+                (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
+            ", new
+            {
+                CompanyId = companyId,
+                Name = request.SecondaryContactName,
+                Role = request.SecondaryContactRole,
+                Email = request.SecondaryContactEmail,
+                Phone = request.SecondaryContactPhone
+            }, transaction);
+        }
+
+        // 5️⃣ Insert Certifications
+        foreach (var cert in request.Certifications ?? Enumerable.Empty<string>())
+        {
+            await conn.ExecuteAsync(@"
+                INSERT INTO company_certifications
+                (company_id, certification_name)
+                VALUES (@CompanyId, @Certification);
+            ", new
+            {
+                CompanyId = companyId,
+                Certification = cert
+            }, transaction);
+        }
+
+        transaction.Commit();
+        return companyId;
+    }
+    catch
+    {
+        transaction.Rollback();
+        throw;
+    }
+}
+
+        public async Task<long> CreateUploadAsync(
+            Guid companyId,
+            int uploadedBy,
+            string fileName)
+        {
+            using var conn = CreateConnection();
+
+            return await conn.ExecuteScalarAsync<long>(@"
+        INSERT INTO bulk_upload_history
+        (
+            company_id,
+            uploaded_by,
+            file_name,
+            status
+        )
+        VALUES
+        (
+            @CompanyId,
+            @UploadedBy,
+            @FileName,
+            'Processing'
+        )
+        RETURNING upload_id;
+    ",
+                new
+                {
+                    CompanyId = companyId,
+                    UploadedBy = uploadedBy,
+                    FileName = fileName
+                });
+        }
+
+
+
+        public async Task InsertErrorAsync(long uploadId, int rowNumber, string reason)
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync(@"
+                INSERT INTO bulk_upload_errors (upload_id, row_number, error_reason)
+                VALUES (@UploadId, @RowNumber, @Reason);
+            ", new { UploadId = uploadId, RowNumber = rowNumber, Reason = reason });
+        }
+
+        public async Task UpdateUploadAsync(long uploadId, int total, int success, int failure, string status)
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync(@"
+                UPDATE bulk_upload_history
+                SET total_rows=@Total, success_count=@Success, failure_count=@Failure, status=@Status
+                WHERE upload_id=@UploadId;
+            ", new { UploadId = uploadId, Total = total, Success = success, Failure = failure, Status = status });
+        }
+
+        public async Task SaveFileAsync(long uploadId, byte[] content, long size)
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync(@"
+                INSERT INTO upload_files (upload_id, file_content, file_size)
+                VALUES (@UploadId, @Content, @Size);
+            ", new { UploadId = uploadId, Content = content, Size = size });
+        }
+
+        public async Task<byte[]> GetFileAsync(long uploadId)
+        {
+            using var conn = CreateConnection();
+            return await conn.ExecuteScalarAsync<byte[]>(@"
+                SELECT file_content FROM upload_files WHERE upload_id=@UploadId;
+            ", new { UploadId = uploadId });
+        }
+
+        public async Task DeleteFileAsync(long uploadId)
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync("DELETE FROM upload_files WHERE upload_id=@UploadId", new { UploadId = uploadId });
+        }
+
+     public async Task InsertSupplierResourcesBatchAsync(List<SupplierResourceDto> batch)
+{
+    using var conn = CreateConnection();
+    await ((NpgsqlConnection)conn).OpenAsync();
+    using var tx = conn.BeginTransaction();
+
+    try
+    {
+        // =========================================
+        // UPDATED: Added Status & Approval_Stage
+        // =========================================
+        var sql = @"
+           INSERT INTO suppliercapacity
+            (
+                companyemployeeid,
+                companyid,
+                isrefered,
+                workingsince,
+                ctc,
+                jobtitle,
+                role,
+                gender,
+                location,
+                totalexperience,
+                technicalskills,
+                tools,
+                numberofprojects,
+                employernote,
+                status,
+                approval_stage
+            )
+            SELECT
+                u.companyemployeeid,
+                u.companyid,
+                u.isrefered,
+                u.workingsince,
+                u.ctc,
+                u.jobtitle,
+                u.role,
+                u.gender,
+                u.location,
+                u.totalexperience,
+                u.technicalskills,
+                u.tools,
+                u.numberofprojects,
+                u.employernote,
+                u.status::supplier_status,           -- 🔥 CAST HERE
+                u.approval_stage                      -- VARCHAR column
+            FROM UNNEST
+            (
+                @CompanyEmployeeId,
+                @CompanyId,
+                @IsRefered,
+                @WorkingSince,
+                @CTC,
+                @JobTitle,
+                @Role,
+                @Gender,
+                @Location,
+                @TotalExperience,
+                @TechnicalSkills,
+                @Tools,
+                @NumberOfProjects,
+                @EmployerNote,
+                @Status,
+                @ApprovalStage
+            )
+            AS u
+            (
+                companyemployeeid,
+                companyid,
+                isrefered,
+                workingsince,
+                ctc,
+                jobtitle,
+                role,
+                gender,
+                location,
+                totalexperience,
+                technicalskills,
+                tools,
+                numberofprojects,
+                employernote,
+                status,
+                approval_stage
+            )
+            RETURNING id";
+
+        // =========================================
+        // UPDATED: Passing Status & ApprovalStage
+        // =========================================
+        var ids = (await conn.QueryAsync<Guid>(
+            sql,
+            new
+            {
+                CompanyEmployeeId = batch.Select(x => x.CompanyEmployeeId).ToArray(),
+                CompanyId = batch.Select(x => x.CompanyId).ToArray(),
+                IsRefered = batch.Select(x => x.IsRefered).ToArray(),
+                WorkingSince = batch.Select(x => x.WorkingSince).ToArray(),
+                CTC = batch.Select(x => x.CTC).ToArray(),
+                JobTitle = batch.Select(x => x.JobTitle).ToArray(),
+                Role = batch.Select(x => x.Role).ToArray(),
+                Gender = batch.Select(x => x.Gender).ToArray(),
+                Location = batch.Select(x => x.Location).ToArray(),
+                TotalExperience = batch.Select(x => x.TotalExperience).ToArray(),
+                TechnicalSkills = batch.Select(x => x.TechnicalSkills).ToArray(),
+                Tools = batch.Select(x => x.Tools).ToArray(),
+                NumberOfProjects = batch.Select(x => x.NumberOfProjects).ToArray(),
+                EmployerNote = batch.Select(x => x.EmployerNote).ToArray(),
+
+                // 🔥 NEW FIELDS
+                Status = batch.Select(x => x.Status.ToString()).ToArray(),
+                ApprovalStage = batch.Select(x => x.ApprovalStage.ToString()).ToArray()
+            },
+            tx
+        )).ToList();
+
+        // =========================================
+        // Certifications insert (UNCHANGED)
+        // =========================================
+        var certSql = @"
+            INSERT INTO suppliercertifications
+            (suppliercapacityid, certificationname)
+            VALUES (@Id, @Cert);
+        ";
+
+        for (int i = 0; i < batch.Count; i++)
+        {
+            if (batch[i].Certifications == null || batch[i].Certifications.Count == 0)
+                continue;
+
+            foreach (var cert in batch[i].Certifications)
+            {
+                await conn.ExecuteAsync(
+                    certSql,
+                    new
+                    {
+                        Id = ids[i],
+                        Cert = cert
+                    },
+                    tx
+                );
+            }
+        }
+
+        tx.Commit();
+    }
+    catch
+    {
+        tx.Rollback();
+        throw;
+    }
+}
+
+      
+        public async Task MarkSlaSignedAsync(Guid companyId)
+        {
+            using var conn = CreateConnection();
+            await conn.ExecuteAsync(@"
+            UPDATE companies
+            SET is_sla_signed = TRUE,
+                updated_at = NOW()
+            WHERE id = @CompanyId;
+        ", new { CompanyId = companyId });
+        }
+        
+        
+        
+        
+        public async Task SetPasswordAsync(Guid companyId, string passwordHash)
+            {
+                using var conn = CreateConnection();
+
+                await conn.ExecuteAsync(@"
+                                        UPDATE companies
+                                        SET password_hash = @PasswordHash,
+                                            updated_at = NOW()
+                                        WHERE id = @CompanyId;
+                                    ", new
+                {
+                    CompanyId = companyId,
+                    PasswordHash = passwordHash
+                });
+            }
+
+        public async Task<IEnumerable<SupplierCapacity>> GetByStageAsync(
+            Guid companyId,
+            ApprovalStage stage,
+            SupplierStatus? status)
+        {
+            using var conn = CreateConnection();
+
+            var sql = @"
+                  SELECT 
+    sc.id                    AS ""Id"",
+    sc.companyid             AS ""CompanyId"",
+    sc.companyemployeeid     AS ""CompanyEmployeeId"",
+    sc.isrefered             AS ""IsRefered"",
+    sc.workingsince          AS ""WorkingSince"",
+    sc.ctc                   AS ""CTC"",
+    sc.jobtitle              AS ""JobTitle"",
+    sc.role                  AS ""Role"",
+    sc.gender                AS ""Gender"",
+    sc.location              AS ""Location"",
+    sc.totalexperience       AS ""TotalExperience"",
+    sc.technicalskills       AS ""TechnicalSkills"",
+    sc.tools                 AS ""Tools"",
+    sc.numberofprojects      AS ""NumberOfProjects"",
+    sc.status                AS ""Status"",
+    sc.approval_stage        AS ""ApprovalStage"",
+    sc.employernote          AS ""EmployerNote"",
+
+    c.id                     AS ""CompanyId_FromJoin"",
+    c.company_name           AS ""CompanyName"",
+
+    cert.id                  AS cert_id,
+    cert.certificationname   AS ""CertificationName""
+FROM suppliercapacity sc
+INNER JOIN companies c
+    ON c.id = sc.companyid
+LEFT JOIN suppliercertifications cert
+    ON sc.id = cert.suppliercapacityid
+WHERE sc.companyid = @CompanyId
+  AND sc.approval_stage = @Stage
+  AND (
+        @Status IS NULL
+        OR sc.status = @Status::supplier_status
+      );
+                    ";
+
+            var dict = new Dictionary<Guid, SupplierCapacity>();
+
+            await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+                sql,
+                (sc, cert) =>
+                {
+                    if (!dict.TryGetValue(sc.Id, out var capacity))
+                    {
+                        capacity = sc;
+                        capacity.Certifications = new List<SupplierCertification>();
+
+                        // 🔥 CRITICAL FIX
+                        capacity.CompanyId = sc.CompanyId;
+                        capacity.CompanyName = sc.CompanyName;
+
+                        dict.Add(sc.Id, capacity);
+                    }
+
+                    if (cert != null)
+                        capacity.Certifications.Add(cert);
+
+                    return capacity;
+                },
+                new
+                {
+                    CompanyId = companyId,
+                    Stage = stage.ToString(),
+                    Status = status?.ToString()
+                },
+                splitOn: "cert_id"
+            );
+
+
+
+            return dict.Values;
+        }
+
+        public async Task<SupplierCapacity> GetByIdAsync(Guid id)
+        {
+            using var conn = CreateConnection();
+
+            var sql = @"SELECT * FROM suppliercapacity WHERE id = @Id";
+            return await conn.QuerySingleAsync<SupplierCapacity>(sql, new { Id = id });
+        }
+        public async Task UpdateAsync(SupplierCapacity capacity)
+        {
+            using var conn = CreateConnection();
+
+            var sql = @"
+        UPDATE suppliercapacity SET
+            status = @Status::supplier_status,
+            approval_stage = @ApprovalStage,
+            remark = @Remark
+        WHERE id = @Id;
+    ";
+
+            await conn.ExecuteAsync(sql, new
+            {
+                Status = capacity.Status.ToString(),
+                ApprovalStage = capacity.ApprovalStage.ToString(),
+                capacity.Remark,
+                capacity.Id
+            });
+        }
+        
+        
+        
+        
+        
+        
+    public async Task UpdateAsyncReferEmployee(SupplierCapacity entity)
+{
+    using var conn = CreateConnection();
+    conn.Open();
+
+    using var transaction = conn.BeginTransaction();
+
+    try
+    {
+        // 1️⃣ Update SupplierCapacity
+        var updateCapacitySql = @"
+            UPDATE SupplierCapacity
+            SET
+                CompanyEmployeeId = @CompanyEmployeeId,
+                WorkingSince = @WorkingSince,
+                CTC = @CTC,
+                JobTitle = @JobTitle,
+                Role = @Role,
+                Gender = @Gender,
+                Location = @Location,
+                TotalExperience = @TotalExperience,
+                TechnicalSkills = @TechnicalSkills,
+                Tools = @Tools,
+                NumberOfProjects = @NumberOfProjects,
+                EmployerNote = @EmployerNote
+            WHERE Id = @Id;
+        ";
+
+        await conn.ExecuteAsync(
+            updateCapacitySql,
+            new
+            {
+                entity.Id,
+                entity.CompanyEmployeeId,
+
+                // ✅ ALWAYS VALID DateTime
+                WorkingSince = entity.WorkingSince.ToDateTime(TimeOnly.MinValue),
+
+                entity.CTC,
+                entity.JobTitle,
+                entity.Role,
+                entity.Gender,
+                entity.Location,
+                entity.TotalExperience,
+                entity.TechnicalSkills,
+                entity.Tools,
+                entity.NumberOfProjects,
+                entity.EmployerNote
+            },
+            transaction
+        );
+
+        // 2️⃣ Delete old certifications
+        await conn.ExecuteAsync(
+            @"DELETE FROM SupplierCertifications WHERE SupplierCapacityId = @Id;",
+            new { entity.Id },
+            transaction
+        );
+
+        // 3️⃣ Insert new certifications
+        if (entity.Certifications.Any())
+        {
+            await conn.ExecuteAsync(
+                @"INSERT INTO SupplierCertifications
+                  (Id, SupplierCapacityId, CertificationName)
+                  VALUES (@Id, @SupplierCapacityId, @CertificationName);",
+                entity.Certifications.Select(c => new
+                {
+                    c.Id,
+                    SupplierCapacityId = entity.Id,
+                    c.CertificationName
+                }),
+                transaction
+            );
+        }
+
+        transaction.Commit();
+    }
+    catch
+    {
+        transaction.Rollback();
+        throw;
+    }
+}
+
+    
+public async Task<string?> GetPasswordHashAsync(Guid companyId)
+{
+    using var conn = CreateConnection();
+
+    return await conn.QuerySingleOrDefaultAsync<string>(@"
+        SELECT password_hash
+        FROM companies
+        WHERE id = @CompanyId
+    ", new { CompanyId = companyId });
+}
+
+
+
+    }
+}

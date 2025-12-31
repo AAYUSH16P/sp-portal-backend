@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Meeting Scheduled</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
+<p>Hi {{RecipientName}},</p>
+
+<p>Your meeting has been successfully scheduled with the following details:</p>
+
+<table style="border-collapse: collapse;">
+    <tr>
+        <td><strong>Subject:</strong></td>
+        <td>{{Subject}}</td>
+    </tr>
+    <tr>
+        <td><strong>Date:</strong></td>
+        <td>{{Date}}</td>
+    </tr>
+    <tr>
+        <td><strong>Time:</strong></td>
+        <td>{{Time}}</td>
+    </tr>
+    <tr>
+        <td><strong>Host:</strong></td>
+        <td>{{HostEmail}}</td>
+    </tr>
+</table>
+
+<p>
+    <strong>Join Meeting:</strong><br/>
+    <a href="{{JoinUrl}}">{{JoinUrl}}</a>
+</p>
+
+<p>Thanks,<br/>
+    Supplier Portal Team</p>
+</body>
+</html>

@@ -1,0 +1,14 @@
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/bin/Debug/net8.0/FinancialManagementDataAccess.deps.json
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/bin/Debug/net8.0/FinancialManagementDataAccess.runtimeconfig.json
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/bin/Debug/net8.0/FinancialManagementDataAccess.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/bin/Debug/net8.0/FinancialManagementDataAccess.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.csproj.AssemblyReference.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.GeneratedMSBuildEditorConfig.editorconfig
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.AssemblyInfoInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.AssemblyInfo.cs
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.csproj.CoreCompileInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/refint/FinancialManagementDataAccess.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/FinancialManagementDataAccess.genruntimeconfig.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementDataAccess/obj/Debug/net8.0/ref/FinancialManagementDataAccess.dll

@@ -1,0 +1,17 @@
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementRepositories.deps.json
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementRepositories.runtimeconfig.json
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementRepositories.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementRepositories.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementDataAccess.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/bin/Debug/net8.0/FinancialManagementDataAccess.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.csproj.AssemblyReference.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.GeneratedMSBuildEditorConfig.editorconfig
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.AssemblyInfoInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.AssemblyInfo.cs
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.csproj.CoreCompileInputs.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/Financia.7812E90E.Up2Date
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/refint/FinancialManagementRepositories.dll
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.pdb
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/FinancialManagementRepositories.genruntimeconfig.cache
+/Users/aayushraj/Downloads/dynamic/FinancialManagementRepositories/obj/Debug/net8.0/ref/FinancialManagementRepositories.dll
