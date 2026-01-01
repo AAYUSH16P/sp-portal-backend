@@ -141,7 +141,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             data.IsSlaSigned
         );
 
-        if (!BCrypt.Net.BCrypt.Verify(dto.Password, data.PasswordHash))
+        if (!PasswordHasher.Verify(dto.Password, data.PasswordHash))
         {
             _logger.LogWarning(
                 "❌ Login failed: Password mismatch for Email: {Email}, CompanyId: {CompanyId}",
