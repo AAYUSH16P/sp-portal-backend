@@ -125,17 +125,51 @@ public class CompanyApprovalService : ICompanyApprovalService
     
     public async Task<LoginResponseDto> LoginAsync(CompanyLoginDto dto)
     {
+        _logger.LogInformation("🔐 Login attempt started for Email: {Email}", dto.Email);
+
         var data = await _repo.GetLoginDataAsync(dto.Email);
 
         if (data == null)
+        {
+            _logger.LogWarning("❌ Login failed: No user found for Email: {Email}", dto.Email);
             throw new UnauthorizedAccessException("Invalid credentials");
+        }
 
-        
+        _logger.LogInformation(
+            "✅ User found. CompanyId: {CompanyId}, IsSlaSigned: {IsSlaSigned}",
+            data.CompanyId,
+            data.IsSlaSigned
+        );
 
         if (!BCrypt.Net.BCrypt.Verify(dto.Password, data.PasswordHash))
-            throw new UnauthorizedAccessException("Invalid credentials");
+        {
+            _logger.LogWarning(
+                "❌ Login failed: Password mismatch for Email: {Email}, CompanyId: {CompanyId}",
+                dto.Email,
+                data.CompanyId
+            );
 
-        var token = _jwtGenerator.Generate(data.CompanyId,data.IsSlaSigned, dto.Email, data.CompanyName,out var expiresAt);
+            throw new UnauthorizedAccessException("Invalid credentials");
+        }
+
+        _logger.LogInformation(
+            "🔑 Password verified successfully for CompanyId: {CompanyId}",
+            data.CompanyId
+        );
+
+        var token = _jwtGenerator.Generate(
+            data.CompanyId,
+            data.IsSlaSigned,
+            dto.Email,
+            data.CompanyName,
+            out var expiresAt
+        );
+
+        _logger.LogInformation(
+            "🎟️ JWT generated successfully for CompanyId: {CompanyId}, ExpiresAt: {ExpiresAt}",
+            data.CompanyId,
+            expiresAt
+        );
 
         return new LoginResponseDto
         {
@@ -143,7 +177,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             ExpiresAt = expiresAt
         };
     }
-    
+
     
     
     public async Task<CompanyDto> GetDetailsAsync(Guid companyId)
