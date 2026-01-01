@@ -74,8 +74,8 @@ builder.Services.AddScoped<ICompanyChangeRequestService, CompanyChangeRequestSer
 
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
+builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 builder.Services.AddScoped<ITemplateRenderer, HtmlTemplateRenderer>();
 

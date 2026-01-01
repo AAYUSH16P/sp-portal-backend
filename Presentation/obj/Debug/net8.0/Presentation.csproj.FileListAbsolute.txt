@@ -204,3 +204,8 @@
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/BCrypt.Net-Next.dll
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/appsettings.Development.json
 /Users/aayushraj/Downloads/dynamic/Presentation/obj/Debug/net8.0/Presentation.sourcelink.json
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/MeetingScheduled.html
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/SupplierApproved.html
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/SupplierRejected.html
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/SendGrid.dll
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/StarkbankEcdsa.dll
