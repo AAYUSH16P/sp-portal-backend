@@ -1,5 +1,6 @@
 using DynamicFormRepo.DynamicFormRepoInterface;
 using DynamicFormService.DynamicFormServiceInterface;
+using Hangfire;
 using Infrastructure.Security;
 using Shared;
 using Shared.Dtos;
@@ -28,32 +29,40 @@ public class CompanyApprovalService : ICompanyApprovalService
 
     public async Task ApproveAsync(Guid companyId)
     {
-        // 1. Generate password
         var plainPassword = PasswordGenerator.Generate();
 
         // 2. Hash password
         var passwordHash = PasswordHasher.Hash(plainPassword);
 
-        // 3. Approve + store password hash
+        // 3. Approve company
         await _repo.ApproveCompanyAsync(companyId, passwordHash);
 
-        // 4. Fetch email details
+        // 4. Fetch primary contact
         var contact = await _repo.GetPrimaryContactAsync(companyId);
+
+        if (contact == null || string.IsNullOrWhiteSpace(contact.Value.Email))
+        {
+            Console.WriteLine($"Approval done but email missing for company {companyId}");
+            return;
+        }
 
         var (email, contactName) = contact.Value;
 
-        // 5. Send email
+        // 5. Prepare email
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierApproved,
             new Dictionary<string, string>
             {
-                ["SupplierContactName"] = contactName,
+                ["SupplierContactName"] = contactName ?? "Supplier",
+                ["LoginEmail"] = email,
                 ["PortalLink"] = "https://supplier-portal-frontend-production.up.railway.app/login",
                 ["TemporaryPassword"] = plainPassword
             },
             out var subject);
 
-        await _emailSender.SendAsync(email, subject, body);
+        BackgroundJob.Enqueue<IEmailSender>(sender =>
+            sender.SendAsync(email, subject, body)
+        );
     }
 
 
@@ -61,7 +70,13 @@ public class CompanyApprovalService : ICompanyApprovalService
     {
         await _repo.RejectCompanyAsync(companyId, remark);
 
-        var contact  = await _repo.GetPrimaryContactAsync(companyId);
+        var contact = await _repo.GetPrimaryContactAsync(companyId);
+
+        if (contact == null || string.IsNullOrWhiteSpace(contact.Value.Email))
+        {
+            Console.WriteLine($"Reject email missing for company {companyId}");
+            return;
+        }
         var (email, contactName) = contact.Value;
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierRejected,
@@ -72,7 +87,9 @@ public class CompanyApprovalService : ICompanyApprovalService
             },
             out var subject);
 
-        await _emailSender.SendAsync(email, subject, body);
+        BackgroundJob.Enqueue<IEmailSender>(sender =>
+            sender.SendAsync(email, subject, body)
+        );
     }
     
     

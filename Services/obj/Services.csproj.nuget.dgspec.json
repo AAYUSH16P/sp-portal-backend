@@ -245,6 +245,10 @@
               "target": "Package",
               "version": "[1.70.0, )"
             },
+            "Hangfire.Core": {
+              "target": "Package",
+              "version": "[1.8.22, )"
+            },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
@@ -264,6 +268,10 @@
             "Microsoft.Graph": {
               "target": "Package",
               "version": "[5.99.0, )"
+            },
+            "SendGrid": {
+              "target": "Package",
+              "version": "[9.29.3, )"
             }
           },
           "imports": [

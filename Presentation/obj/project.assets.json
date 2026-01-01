@@ -2419,6 +2419,7 @@
           "BCrypt.Net-Next": "4.0.3",
           "ClosedXML": "0.105.0",
           "Google.Apis.Auth": "1.70.0",
+          "Hangfire.Core": "1.8.22",
           "Microsoft.EntityFrameworkCore.SqlServer": "8.0.7",
           "Microsoft.Graph": "5.99.0",
           "Repositories": "1.0.0",
