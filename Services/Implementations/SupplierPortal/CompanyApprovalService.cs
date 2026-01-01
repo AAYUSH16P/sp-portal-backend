@@ -2,6 +2,7 @@ using DynamicFormRepo.DynamicFormRepoInterface;
 using DynamicFormService.DynamicFormServiceInterface;
 using Hangfire;
 using Infrastructure.Security;
+using Microsoft.Extensions.Logging;
 using Shared;
 using Shared.Dtos;
 using Shared.Enums;
@@ -14,41 +15,66 @@ public class CompanyApprovalService : ICompanyApprovalService
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IEmailSender _emailSender;
     private readonly IJwtTokenGenerator _jwtGenerator;
+    private readonly ILogger<CompanyApprovalService> _logger;
+
 
     public CompanyApprovalService(
         ICompanyApprovalRepo repo,
         ITemplateRenderer templateRenderer,
         IEmailSender emailSender,
-        IJwtTokenGenerator jwtGenerator)
+        IJwtTokenGenerator jwtGenerator,
+        ILogger<CompanyApprovalService> logger)
     {
         _repo = repo;
         _templateRenderer = templateRenderer;
         _emailSender = emailSender;
         _jwtGenerator = jwtGenerator;
+        _logger = logger;
     }
 
     public async Task ApproveAsync(Guid companyId)
     {
-        var plainPassword = PasswordGenerator.Generate();
+        _logger.LogInformation("Starting company approval. CompanyId: {CompanyId}", companyId);
 
-        // 2. Hash password
+        var plainPassword = PasswordGenerator.Generate();
         var passwordHash = PasswordHasher.Hash(plainPassword);
 
-        // 3. Approve company
         await _repo.ApproveCompanyAsync(companyId, passwordHash);
 
-        // 4. Fetch primary contact
+        _logger.LogInformation(
+            "Company approved successfully in DB. CompanyId: {CompanyId}",
+            companyId
+        );
+
         var contact = await _repo.GetPrimaryContactAsync(companyId);
 
-        if (contact == null || string.IsNullOrWhiteSpace(contact.Value.Email))
+        if (contact == null)
         {
-            Console.WriteLine($"Approval done but email missing for company {companyId}");
+            _logger.LogWarning(
+                "Approval completed but primary contact record NOT FOUND. CompanyId: {CompanyId}",
+                companyId
+            );
             return;
         }
 
         var (email, contactName) = contact.Value;
 
-        // 5. Prepare email
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning(
+                "Approval completed but primary contact email is MISSING. CompanyId: {CompanyId}, ContactName: {ContactName}",
+                companyId,
+                contactName
+            );
+            return;
+        }
+
+        _logger.LogInformation(
+            "Sending approval email. CompanyId: {CompanyId}, Email: {Email}",
+            companyId,
+            email
+        );
+
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierApproved,
             new Dictionary<string, string>
@@ -58,10 +84,15 @@ public class CompanyApprovalService : ICompanyApprovalService
                 ["PortalLink"] = "https://supplier-portal-frontend-production.up.railway.app/login",
                 ["TemporaryPassword"] = plainPassword
             },
-            out var subject);
+            out var subject
+        );
 
-        BackgroundJob.Enqueue<IEmailSender>(sender =>
-            sender.SendAsync(email, subject, body)
+        await _emailSender.SendAsync(email, subject, body);
+
+        _logger.LogInformation(
+            "Approval email sent successfully. CompanyId: {CompanyId}, Email: {Email}",
+            companyId,
+            email
         );
     }
 
@@ -77,6 +108,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             Console.WriteLine($"Reject email missing for company {companyId}");
             return;
         }
+
         var (email, contactName) = contact.Value;
         var body = _templateRenderer.Render(
             EmailTemplateType.SupplierRejected,
@@ -87,10 +119,8 @@ public class CompanyApprovalService : ICompanyApprovalService
             },
             out var subject);
 
-        BackgroundJob.Enqueue<IEmailSender>(sender =>
-            sender.SendAsync(email, subject, body)
-        );
-    }
+        await _emailSender.SendAsync(email, subject, body);
+}
     
     
     public async Task<LoginResponseDto> LoginAsync(CompanyLoginDto dto)
