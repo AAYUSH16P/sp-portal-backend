@@ -46,11 +46,11 @@ namespace DynamicFormPresentation.Controllers
                 companyId // 🔥 PASS COMPANY ID
             );
 
-            // _backgroundJobClient.Enqueue<ISupplierServiceInterface>(
-            //     s => s.ProcessUploadAsync(uploadId, companyId)
-            // );
+             _backgroundJobClient.Enqueue<ISupplierServiceInterface>(
+                 s => s.ProcessUploadAsync(uploadId, companyId)
+             );
             
-            await _supplierServiceInterface.ProcessUploadAsync(uploadId,companyId);
+            // await _supplierServiceInterface.ProcessUploadAsync(uploadId,companyId);
 
             return Ok(new
             {
