@@ -22,6 +22,13 @@ public class SupplierCapacityController : ControllerBase
     {
         return Ok(await _service.GetSupplierCapacitiesAsync(companyId, filter));
     }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetAllPendingCanidate()
+    {
+        return Ok(await _service.GetAllSupplierCapacitiesAsync("pending"));
+        
+    }
 
     [HttpPost("{id}/approve")]
     public async Task<IActionResult> Approve(Guid id)

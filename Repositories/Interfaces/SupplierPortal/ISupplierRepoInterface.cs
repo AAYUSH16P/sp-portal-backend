@@ -36,5 +36,9 @@ namespace DynamicFormRepo.DynamicFormRepoInterface
         Task UpdateAsync(SupplierCapacity capacity);
 
         Task UpdateAsyncReferEmployee(SupplierCapacity entity);
+
+        Task<IEnumerable<SupplierCapacity>> GetAllDataByStageAsync(
+            ApprovalStage stage,
+            SupplierStatus? status);
     }
 }

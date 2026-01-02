@@ -487,6 +487,88 @@ WHERE sc.companyid = @CompanyId
 
             return dict.Values;
         }
+        
+        
+        
+         public async Task<IEnumerable<SupplierCapacity>> GetAllDataByStageAsync(
+                ApprovalStage stage,
+                SupplierStatus? status)
+            {
+                using var conn = CreateConnection();
+
+                var sql = @"
+                    SELECT 
+                        sc.id                    AS ""Id"",
+                        sc.companyid             AS ""CompanyId"",
+                        sc.companyemployeeid     AS ""CompanyEmployeeId"",
+                        sc.isrefered             AS ""IsRefered"",
+                        sc.workingsince          AS ""WorkingSince"",
+                        sc.ctc                   AS ""CTC"",
+                        sc.jobtitle              AS ""JobTitle"",
+                        sc.role                  AS ""Role"",
+                        sc.gender                AS ""Gender"",
+                        sc.location              AS ""Location"",
+                        sc.totalexperience       AS ""TotalExperience"",
+                        sc.technicalskills       AS ""TechnicalSkills"",
+                        sc.tools                 AS ""Tools"",
+                        sc.numberofprojects      AS ""NumberOfProjects"",
+                        sc.status                AS ""Status"",
+                        sc.approval_stage        AS ""ApprovalStage"",
+                        sc.employernote          AS ""EmployerNote"",
+
+                        c.id                     AS ""CompanyId_FromJoin"",
+                        c.company_name           AS ""CompanyName"",
+
+                        cert.id                  AS cert_id,
+                        cert.certificationname   AS ""CertificationName""
+                    FROM suppliercapacity sc
+                    INNER JOIN companies c
+                        ON c.id = sc.companyid
+                    LEFT JOIN suppliercertifications cert
+                        ON sc.id = cert.suppliercapacityid
+                    WHERE sc.approval_stage = @Stage
+                      AND (
+                            @Status IS NULL
+                            OR sc.status = @Status::supplier_status
+                          );
+                ";
+
+                var dict = new Dictionary<Guid, SupplierCapacity>();
+
+                await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+                    sql,
+                    (sc, cert) =>
+                    {
+                        if (!dict.TryGetValue(sc.Id, out var capacity))
+                        {
+                            capacity = sc;
+                            capacity.Certifications = new List<SupplierCertification>();
+
+                            // ✅ Preserve company details
+                            capacity.CompanyId = sc.CompanyId;
+                            capacity.CompanyName = sc.CompanyName;
+
+                            dict.Add(sc.Id, capacity);
+                        }
+
+                        if (cert != null)
+                            capacity.Certifications.Add(cert);
+
+                        return capacity;
+                    },
+                    new
+                    {
+                        Stage = stage.ToString(),
+                        Status = status?.ToString()
+                    },
+                    splitOn: "cert_id"
+                );
+
+                return dict.Values;
+            }
+
+        
+        
 
         public async Task<SupplierCapacity> GetByIdAsync(Guid id)
         {

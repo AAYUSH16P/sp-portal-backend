@@ -192,6 +192,18 @@ namespace DynamicFormService.DynamicFormServiceImplementation
 
             return Map(data);
         }
+        
+        
+        
+        public async  Task<IEnumerable<SupplierResourceDto>> GetAllSupplierCapacitiesAsync(string filter)
+        {
+            var data = await _supplierRepoInterface.GetAllDataByStageAsync(ApprovalStage.Supplier, ParseFilter(filter));
+
+            return Map(data);
+        }
+
+        
+        
 
 
     public async Task HrApproveAsync(Guid id)

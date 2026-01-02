@@ -37,5 +37,7 @@ namespace DynamicFormService.DynamicFormServiceInterface
 
         Task SupplierApproveAsync(Guid id);
         Task SupplierRejectAsync(Guid id, string remark);
+
+        Task<IEnumerable<SupplierResourceDto>> GetAllSupplierCapacitiesAsync(string filter);
     }
 }
