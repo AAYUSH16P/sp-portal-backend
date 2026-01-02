@@ -2,6 +2,7 @@ using Dapper;
 using Npgsql;
 using System.Data;
 using DynamicFormRepo.DynamicFormRepoInterface;
+using FinancialManagementDataAccess.Models;
 using Shared;
 using Shared.Dtos;
 
@@ -218,5 +219,131 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
 
     return await conn.QueryAsync<CompanyDto>(sql);
 }
+ 
+ 
+ public async Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId)
+{
+    using var conn = CreateConnection();
+
+    var sql = @"
+        SELECT 
+            sc.id                    AS ""Id"",
+            sc.companyid             AS ""CompanyId"",
+            sc.companyemployeeid     AS ""CompanyEmployeeId"",
+            sc.isrefered             AS ""IsRefered"",
+            sc.workingsince          AS ""WorkingSince"",
+            sc.ctc                   AS ""CTC"",
+            sc.jobtitle              AS ""JobTitle"",
+            sc.role                  AS ""Role"",
+            sc.gender                AS ""Gender"",
+            sc.location              AS ""Location"",
+            sc.totalexperience       AS ""TotalExperience"",
+            sc.technicalskills       AS ""TechnicalSkills"",
+            sc.tools                 AS ""Tools"",
+            sc.numberofprojects      AS ""NumberOfProjects"",
+            sc.status                AS ""Status"",
+            sc.approval_stage        AS ""ApprovalStage"",
+            sc.employernote          AS ""EmployerNote"",
+            sc.remark                AS ""Remark"",
+            c.company_name           AS ""CompanyName"",
+            cert.id                  AS cert_id,
+            cert.certificationname   AS ""CertificationName""
+        FROM suppliercapacity sc
+        INNER JOIN companies c ON c.id = sc.companyid
+        LEFT JOIN suppliercertifications cert 
+            ON sc.id = cert.suppliercapacityid
+        WHERE sc.companyid = @CompanyId
+          AND sc.status = 'Rejected'
+          AND sc.approval_stage = 'Supplier';
+    ";
+
+    var dict = new Dictionary<Guid, SupplierCapacity>();
+
+    await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+        sql,
+        (sc, cert) =>
+        {
+            if (!dict.TryGetValue(sc.Id, out var capacity))
+            {
+                capacity = sc;
+                capacity.Certifications = new List<SupplierCertification>();
+                dict.Add(sc.Id, capacity);
+            }
+
+            if (cert != null)
+                capacity.Certifications.Add(cert);
+
+            return capacity;
+        },
+        new { CompanyId = companyId },
+        splitOn: "cert_id"
+    );
+
+    return dict.Values;
+}
+
+ 
+ 
+ public async Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId)
+{
+    using var conn = CreateConnection();
+
+    var sql = @"
+        SELECT 
+            sc.id                    AS ""Id"",
+            sc.companyid             AS ""CompanyId"",
+            sc.companyemployeeid     AS ""CompanyEmployeeId"",
+            sc.isrefered             AS ""IsRefered"",
+            sc.workingsince          AS ""WorkingSince"",
+            sc.ctc                   AS ""CTC"",
+            sc.jobtitle              AS ""JobTitle"",
+            sc.role                  AS ""Role"",
+            sc.gender                AS ""Gender"",
+            sc.location              AS ""Location"",
+            sc.totalexperience       AS ""TotalExperience"",
+            sc.technicalskills       AS ""TechnicalSkills"",
+            sc.tools                 AS ""Tools"",
+            sc.numberofprojects      AS ""NumberOfProjects"",
+            sc.status                AS ""Status"",
+            sc.approval_stage        AS ""ApprovalStage"",
+            sc.employernote          AS ""EmployerNote"",
+            sc.remark                AS ""Remark"",
+            c.company_name           AS ""CompanyName"",
+            cert.id                  AS cert_id,
+            cert.certificationname   AS ""CertificationName""
+        FROM suppliercapacity sc
+        INNER JOIN companies c ON c.id = sc.companyid
+        LEFT JOIN suppliercertifications cert 
+            ON sc.id = cert.suppliercapacityid
+        WHERE sc.companyid = @CompanyId
+          AND sc.status = 'Rejected'
+          AND sc.approval_stage = 'HR';
+    ";
+
+    var dict = new Dictionary<Guid, SupplierCapacity>();
+
+    await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+        sql,
+        (sc, cert) =>
+        {
+            if (!dict.TryGetValue(sc.Id, out var capacity))
+            {
+                capacity = sc;
+                capacity.Certifications = new List<SupplierCertification>();
+                dict.Add(sc.Id, capacity);
+            }
+
+            if (cert != null)
+                capacity.Certifications.Add(cert);
+
+            return capacity;
+        },
+        new { CompanyId = companyId },
+        splitOn: "cert_id"
+    );
+
+    return dict.Values;
+}
+
 
 }

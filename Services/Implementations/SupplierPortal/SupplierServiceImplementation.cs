@@ -206,7 +206,7 @@ namespace DynamicFormService.DynamicFormServiceImplementation
     {
         var c = await _supplierRepoInterface.GetByIdAsync(id);
         c.Status = SupplierStatus.Rejected;
-        c.ApprovalStage = ApprovalStage.Completed;
+        c.ApprovalStage = ApprovalStage.HR;
         c.Remark = remark;
         await _supplierRepoInterface.UpdateAsync(c);
     }
@@ -225,7 +225,7 @@ namespace DynamicFormService.DynamicFormServiceImplementation
     {
         var c = await _supplierRepoInterface.GetByIdAsync(id);
         c.Status = SupplierStatus.Rejected;
-        c.ApprovalStage = ApprovalStage.Completed;
+        c.ApprovalStage = ApprovalStage.Supplier;
         c.Remark = remark;
         await _supplierRepoInterface.UpdateAsync(c);
     }

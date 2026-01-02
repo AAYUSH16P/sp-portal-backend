@@ -1,6 +1,6 @@
 using DynamicFormRepo.DynamicFormRepoInterface;
 using DynamicFormService.DynamicFormServiceInterface;
-using Hangfire;
+using FinancialManagementDataAccess.Models;
 using Infrastructure.Security;
 using Microsoft.Extensions.Logging;
 using Shared;
@@ -189,5 +189,12 @@ public class CompanyApprovalService : ICompanyApprovalService
     {
         return await _repo.GetAllSuppliersAsync();
     }
+    
+    public Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId)
+        => _repo.GetSupplierRejectedAsync(companyId);
+
+    public Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId)
+        => _repo.GetHrRejectedAsync(companyId);
+
 
 }

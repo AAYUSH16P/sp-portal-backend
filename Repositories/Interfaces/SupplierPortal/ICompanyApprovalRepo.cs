@@ -1,3 +1,4 @@
+using FinancialManagementDataAccess.Models;
 using Shared;
 using Shared.Dtos;
 
@@ -11,4 +12,6 @@ public interface ICompanyApprovalRepo
     Task<CompanyDto> GetDetailsAsync(Guid companyId);
     Task<IEnumerable<CompanyDto>> GetAllSuppliersAsync();
     Task<(string Email, string ContactName)?> GetPrimaryContactAsync(Guid companyId);
+    Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId);
+    Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId);
 }

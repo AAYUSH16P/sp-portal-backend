@@ -51,4 +51,19 @@ public class CompanyApprovalController : ControllerBase
         var result = await _service.GetDetailsAsync(companyId);
         return Ok(result);
     }
+    
+    [HttpGet("rejected/supplier/{companyId}")]
+    public async Task<IActionResult> GetSupplierRejected(Guid companyId)
+    {
+        var result = await _service.GetSupplierRejectedAsync(companyId);
+        return Ok(result);
+    }
+
+    [HttpGet("rejected/hr/{companyId}")]
+    public async Task<IActionResult> GetHrRejected(Guid companyId)
+    {
+        var result = await _service.GetHrRejectedAsync(companyId);
+        return Ok(result);
+    }
+
 }
