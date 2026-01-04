@@ -162,6 +162,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             data.IsSlaSigned,
             dto.Email,
             data.CompanyName,
+            data.IsPasswordChanged,
             out var expiresAt
         );
 

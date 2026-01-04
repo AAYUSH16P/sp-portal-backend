@@ -6,4 +6,5 @@ public class CompanyLoginDataDto
     public string CompanyName { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsSlaSigned { get; set; }
+    public string IsPasswordChanged {get; set;} = string.Empty;
 }

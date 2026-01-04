@@ -14,7 +14,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _config = config;
     }
 
-    public string Generate(Guid companyId, bool isSlaSigned,string email,string companyName, out DateTime expiresAt)
+    public string Generate(Guid companyId, bool isSlaSigned,string email,string companyName,string isPasswordChanged, out DateTime expiresAt)
     {
         expiresAt = DateTime.UtcNow.AddMinutes(20);
 
@@ -24,6 +24,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new Claim("isSlaSigned", isSlaSigned.ToString()),
             new Claim("email", email.ToString()),
             new Claim("companyName", companyName.ToString()),
+            new Claim("isPasswordChanged", isPasswordChanged)
         };
 
         var key = new SymmetricSecurityKey(

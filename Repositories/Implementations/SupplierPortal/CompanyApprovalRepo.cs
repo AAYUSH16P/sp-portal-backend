@@ -70,7 +70,8 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
               c.id            AS CompanyId,
               c.company_name  AS CompanyName,
               c.password_hash AS PasswordHash,
-              c.is_sla_signed AS IsSlaSigned
+              c.is_sla_signed AS IsSlaSigned,
+              c.is_password_changed AS IsPasswordChanged,
           FROM companies c
           INNER JOIN company_contacts cc
               ON cc.company_id = c.id

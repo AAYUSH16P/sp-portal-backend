@@ -397,7 +397,8 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
                 await conn.ExecuteAsync(@"
                                         UPDATE companies
                                         SET password_hash = @PasswordHash,
-                                            updated_at = NOW()
+                                            updated_at = NOW(),
+                                            is_password_changed = true
                                         WHERE id = @CompanyId;
                                     ", new
                 {
