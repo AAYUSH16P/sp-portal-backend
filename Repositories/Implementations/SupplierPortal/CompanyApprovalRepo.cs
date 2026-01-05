@@ -164,59 +164,62 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
     using var conn = CreateConnection();
 
     var sql = @"
-    SELECT
-        c.id                    AS ""Id"",
-        c.company_name          AS ""CompanyName"",
-        c.company_website       AS ""CompanyWebsite"",
-        c.business_type         AS ""BusinessType"",
-        c.company_size          AS ""CompanySize"",
-        c.year_established      AS ""YearEstablished"",
-        c.company_overview      AS ""CompanyOverview"",
-        c.isapproved            AS ""IsApproved"",
-        c.is_sla_signed         AS ""IsSlaSigned"",
-        c.remark                AS ""Remark"",
-        c.total_projects_executed AS ""TotalProjectsExecuted"",
-        c.domain_expertise      AS ""DomainExpertise"",
-        c.created_at            AS ""CreatedAt"",
+              SELECT
+    c.id                      AS ""Id"",
+    c.company_name            AS ""CompanyName"",
+    c.company_website         AS ""CompanyWebsite"",
+    c.business_type           AS ""BusinessType"",
+    c.company_size            AS ""CompanySize"",
+    c.year_established        AS ""YearEstablished"",
+    c.company_overview        AS ""CompanyOverview"",
+    c.isapproved              AS ""IsApproved"",
+    c.is_sla_signed           AS ""IsSlaSigned"",
+    c.remark                  AS ""Remark"",
+    c.total_projects_executed AS ""TotalProjectsExecuted"",
+    c.domain_expertise        AS ""DomainExpertise"",
+    c.created_at              AS ""CreatedAt"",
 
-        -- Contacts
-        json_agg(
-            DISTINCT jsonb_build_object(
-                'ContactType', cc.contact_type,
-                'ContactName', cc.contact_name,
-                'RoleDesignation', cc.role_designation,
-                'Email', cc.email,
-                'Phone', cc.phone
-            )
-        ) FILTER (WHERE cc.id IS NOT NULL) AS ""Contacts"",
+    /* CONTACTS */
+    json_agg(
+        DISTINCT jsonb_build_object(
+            'Id', cc.id,
+            'ContactType', cc.contact_type,
+            'ContactName', cc.contact_name,
+            'RoleDesignation', cc.role_designation,
+            'Email', cc.email,
+            'Phone', cc.phone
+        )
+    ) FILTER (WHERE cc.id IS NOT NULL) AS ""Contacts"",
 
-        -- Addresses
-        json_agg(
-            DISTINCT jsonb_build_object(
-                'AddressLine1', a.address_line1,
-                'AddressLine2', a.address_line2,
-                'City', a.city,
-                'State', a.state,
-                'PostalCode', a.postal_code,
-                'Country', a.country
-            )
-        ) FILTER (WHERE a.id IS NOT NULL) AS ""Addresses"",
+    /* ADDRESSES */
+    json_agg(
+        DISTINCT jsonb_build_object(
+            'Id', a.id,
+            'AddressLine1', a.address_line1,
+            'AddressLine2', a.address_line2,
+            'City', a.city,
+            'State', a.state,
+            'PostalCode', a.postal_code,
+            'Country', a.country
+        )
+    ) FILTER (WHERE a.id IS NOT NULL) AS ""Addresses"",
 
-        -- Certifications
-        json_agg(
-            DISTINCT jsonb_build_object(
-                'CertificationName', cert.certification_name
-            )
-        ) FILTER (WHERE cert.id IS NOT NULL) AS ""Certifications""
+    /* CERTIFICATIONS */
+    json_agg(
+        DISTINCT jsonb_build_object(
+            'Id', cert.id,
+            'CertificationName', cert.certification_name
+        )
+    ) FILTER (WHERE cert.id IS NOT NULL) AS ""Certifications""
 
-    FROM companies c
-    LEFT JOIN company_contacts cc ON cc.company_id = c.id
-    LEFT JOIN company_addresses a ON a.company_id = c.id
-    LEFT JOIN company_certifications cert ON cert.company_id = c.id
+FROM companies c
+LEFT JOIN company_contacts cc ON cc.company_id = c.id
+LEFT JOIN company_addresses a ON a.company_id = c.id
+LEFT JOIN company_certifications cert ON cert.company_id = c.id
 
-    GROUP BY c.id
-    ORDER BY c.created_at DESC;
-    ";
+GROUP BY c.id
+ORDER BY c.created_at DESC;
+            ";
 
     return await conn.QueryAsync<CompanyDto>(sql);
 }
