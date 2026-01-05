@@ -130,6 +130,16 @@ namespace DynamicFormPresentation.Controllers
                 message = "Supplier resource updated successfully"
             });
         }
+        
+        
+        [HttpPut("{companyId}")]
+        public async Task<IActionResult> UpdateCompany(
+            Guid companyId,
+            [FromBody] UpdateCompanyRequestDto dto)
+        {
+            await _supplierServiceInterface.UpdateCompanyAsync(companyId, dto);
+            return Ok(new { message = "Company updated successfully" });
+        }
 
         
     }

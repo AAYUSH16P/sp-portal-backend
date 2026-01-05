@@ -366,7 +366,15 @@ namespace DynamicFormService.DynamicFormServiceImplementation
 
             throw new Exception($"Invalid date in column {columnName}: {cell.GetString()}");
         }
+    
+        
+        public async Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto)
+        {
+            if (dto.YearEstablished < 1900)
+                throw new Exception("Invalid year established");
 
+            await _supplierRepoInterface.UpdateCompanyAsync(companyId, dto);
+        }
 
 
     }

@@ -39,5 +39,8 @@ namespace DynamicFormService.DynamicFormServiceInterface
         Task SupplierRejectAsync(Guid id, string remark);
 
         Task<IEnumerable<SupplierResourceDto>> GetAllSupplierCapacitiesAsync(string filter);
+        
+        Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto);
+
     }
 }

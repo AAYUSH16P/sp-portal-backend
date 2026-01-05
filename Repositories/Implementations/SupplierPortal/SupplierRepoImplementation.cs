@@ -703,5 +703,131 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
 
 
 
+   public async Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto)
+{
+    using var conn = CreateConnection();
+    await ((NpgsqlConnection)conn).OpenAsync();
+    using var tx = conn.BeginTransaction();
+
+    try
+    {
+        /* 1️⃣ Update Company */
+        await conn.ExecuteAsync(@"
+            UPDATE companies
+            SET
+                company_name = @CompanyName,
+                company_website = @CompanyWebsite,
+                business_type = @BusinessType,
+                company_size = @CompanySize,
+                year_established = @YearEstablished,
+                company_overview = @CompanyOverview,
+                total_projects_executed = @TotalProjectsExecuted,
+                domain_expertise = @DomainExpertise,
+                updated_at = NOW()
+            WHERE id = @CompanyId;
+        ", new
+        {
+            CompanyId = companyId,
+            dto.CompanyName,
+            dto.CompanyWebsite,
+            dto.BusinessType,
+            dto.CompanySize,
+            dto.YearEstablished,
+            dto.CompanyOverview,
+            dto.TotalProjectsExecuted,
+            dto.DomainExpertise
+        }, tx);
+
+        /* 2️⃣ Update Address */
+        await conn.ExecuteAsync(@"
+            UPDATE company_addresses
+            SET
+                address_line1 = @AddressLine1,
+                address_line2 = @AddressLine2,
+                city = @City,
+                state = @State,
+                postal_code = @PostalCode,
+                country = @Country
+            WHERE company_id = @CompanyId;
+        ", new
+        {
+            CompanyId = companyId,
+            dto.Address.AddressLine1,
+            dto.Address.AddressLine2,
+            dto.Address.City,
+            dto.Address.State,
+            dto.Address.PostalCode,
+            dto.Address.Country
+        }, tx);
+
+        /* 3️⃣ Update PRIMARY contact */
+        await conn.ExecuteAsync(@"
+            UPDATE company_contacts
+            SET
+                contact_name = @ContactName,
+                role_designation = @Role,
+                email = @Email,
+                phone = @Phone
+            WHERE company_id = @CompanyId AND contact_type = 'PRIMARY';
+        ", new
+        {
+            CompanyId = companyId,
+            ContactName = dto.PrimaryContact.ContactName,
+            Role = dto.PrimaryContact.RoleDesignation,
+            Email = dto.PrimaryContact.Email,
+            Phone = dto.PrimaryContact.Phone
+        }, tx);
+
+        /* 4️⃣ Replace SECONDARY contact */
+        await conn.ExecuteAsync(
+            @"DELETE FROM company_contacts 
+              WHERE company_id = @CompanyId AND contact_type = 'SECONDARY';",
+            new { CompanyId = companyId }, tx);
+
+        if (dto.SecondaryContact != null)
+        {
+            await conn.ExecuteAsync(@"
+                INSERT INTO company_contacts
+                (company_id, contact_type, contact_name, role_designation, email, phone)
+                VALUES
+                (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
+            ", new
+            {
+                CompanyId = companyId,
+                Name = dto.SecondaryContact.ContactName,
+                Role = dto.SecondaryContact.RoleDesignation,
+                Email = dto.SecondaryContact.Email,
+                Phone = dto.SecondaryContact.Phone
+            }, tx);
+        }
+
+        /* 5️⃣ Replace Certifications */
+        await conn.ExecuteAsync(
+            "DELETE FROM company_certifications WHERE company_id = @CompanyId;",
+            new { CompanyId = companyId }, tx);
+
+        foreach (var cert in dto.Certifications)
+        {
+            await conn.ExecuteAsync(@"
+                INSERT INTO company_certifications
+                (company_id, certification_name)
+                VALUES (@CompanyId, @Certification);
+            ", new
+            {
+                CompanyId = companyId,
+                Certification = cert
+            }, tx);
+        }
+
+        tx.Commit();
+    }
+    catch
+    {
+        tx.Rollback();
+        throw;
+    }
+}
+
+
     }
 }
