@@ -840,6 +840,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
         sc.id,
         sc.companyemployeeid,
         sc.companyid,
+        c.company_name        AS companyname,   -- ✅ added
         sc.isrefered,
         sc.workingsince,
         sc.ctc,
@@ -863,24 +864,25 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             '[]'
         ) AS certifications
     FROM public.suppliercapacity sc
+    LEFT JOIN public.companies c
+        ON c.id = sc.companyid                 -- ✅ join companies
     LEFT JOIN public.suppliercertifications cert
         ON cert.suppliercapacityid = sc.id
     WHERE sc.approval_stage = 'Supplier'
       AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
-    GROUP BY sc.id;
+    GROUP BY
+        sc.id,
+        c.company_name;                        -- ✅ required
     ";
 
     using var conn = CreateConnection();
 
-    // 🔒 Explicit type — no inference
     IEnumerable<dynamic> rows = await conn.QueryAsync(sql);
 
-    // 🔒 Explicit list creation
-    List<SupplierResourceDto> result = new List<SupplierResourceDto>();
+    List<SupplierResourceDto> result = new();
 
     foreach (dynamic row in rows)
     {
-
         SupplierStatus? status = null;
         ApprovalStage? stage = null;
 
@@ -899,9 +901,6 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             stage = parsedStage;
         }
 
-
-
-
         string certificationsJson = row.certifications != null
             ? row.certifications.ToString()
             : "[]";
@@ -918,6 +917,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             Id = (Guid)row.id,
             CompanyEmployeeId = (string)row.companyemployeeid,
             CompanyId = (Guid)row.companyid,
+            CompanyName = row.companyname as string,   // ✅ mapped
             IsRefered = (bool)row.isrefered,
 
             WorkingSince = (DateOnly)row.workingsince,
