@@ -2,7 +2,8 @@ using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Extensions.Configuration;
 using DynamicFormService.DynamicFormServiceInterface;
-using Google.Apis.Logging;
+using Microsoft.Extensions.Logging;
+
 
 namespace Infrastructure.Email;
 
@@ -48,7 +49,7 @@ public class SendGridEmailSender : IEmailSender
             "SLA - Talented Staff.pdf"
         );
         
-        _logger.Info("SLA PDF path resolved to: {Path}", slaPath);
+        _logger.LogInformation("SLA PDF path resolved to: {Path}", slaPath);
 
 
 
