@@ -920,7 +920,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             CompanyId = (Guid)row.companyid,
             IsRefered = (bool)row.isrefered,
 
-            WorkingSince = DateOnly.FromDateTime((DateTime)row.workingsince),
+            WorkingSince = (DateOnly)row.workingsince,
 
             CTC = (decimal)row.ctc,
             JobTitle = (string)row.jobtitle,
