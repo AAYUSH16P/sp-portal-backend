@@ -25,7 +25,7 @@ namespace DynamicFormPresentation.Controllers
             IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("File required");
+                return BadRequest("File is required");
 
             var allowedExtensions = new[] { ".xls", ".xlsx" };
             var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -33,31 +33,52 @@ namespace DynamicFormPresentation.Controllers
             if (!allowedExtensions.Contains(fileExtension))
                 return BadRequest("Only Excel files (.xls, .xlsx) are allowed");
 
-            using var stream = file.OpenReadStream();
-
-            ExcelTemplateValidator.Validate(stream);
-            stream.Position = 0;
-
-            var uploadId = await _supplierServiceInterface.SheetUploadAsync(
-                stream,
-                file.FileName,
-                file.Length,
-                1,
-                companyId // 🔥 PASS COMPANY ID
-            );
-
-             _backgroundJobClient.Enqueue<ISupplierServiceInterface>(
-                 s => s.ProcessUploadAsync(uploadId, companyId)
-             );
-            
-            // await _supplierServiceInterface.ProcessUploadAsync(uploadId,companyId);
-
-            return Ok(new
+            try
             {
-                UploadId = uploadId,
-                Message = "Excel upload accepted and queued for processing"
-            });
+                using var stream = file.OpenReadStream();
+
+                // ✅ Validate template headers
+                ExcelTemplateValidator.Validate(stream);
+                stream.Position = 0;
+
+                // ✅ Save upload metadata
+                var uploadId = await _supplierServiceInterface.SheetUploadAsync(
+                    stream,
+                    file.FileName,
+                    file.Length,
+                    1,
+                    companyId
+                );
+
+                // ✅ Enqueue background job ONLY after validation passes
+                _backgroundJobClient.Enqueue<ISupplierServiceInterface>(
+                    s => s.ProcessUploadAsync(uploadId, companyId)
+                );
+
+                return Ok(new
+                {
+                    UploadId = uploadId,
+                    Message = "Excel upload accepted and queued for processing"
+                });
+            }
+            catch (TemplateValidationException ex)
+            {
+                // ❗ Template-specific error
+                return UnprocessableEntity(new
+                {
+                    Message = "Invalid Excel template",
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Message = "Bulk upload failed due to server error"
+                });
+            }
         }
+
 
         [HttpPost("manual-upload")]
         public async Task<IActionResult> CreateSupplierCapacity(
