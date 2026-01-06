@@ -833,95 +833,122 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
    
 
 
-      public async Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
+  public async Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
+{
+    const string sql = @"
+    SELECT
+        sc.id,
+        sc.companyemployeeid,
+        sc.companyid,
+        sc.isrefered,
+        sc.workingsince,
+        sc.ctc,
+        sc.jobtitle,
+        sc.role,
+        sc.gender,
+        sc.location,
+        sc.totalexperience,
+        sc.technicalskills,
+        sc.tools,
+        sc.numberofprojects,
+        sc.status,
+        sc.approval_stage,
+        sc.employernote,
+        COALESCE(
+            json_agg(
+                jsonb_build_object(
+                    'CertificationName', cert.certificationname
+                )
+            ) FILTER (WHERE cert.id IS NOT NULL),
+            '[]'
+        ) AS certifications
+    FROM public.suppliercapacity sc
+    LEFT JOIN public.suppliercertifications cert
+        ON cert.suppliercapacityid = sc.id
+    WHERE sc.approval_stage = 'Supplier'
+      AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
+    GROUP BY sc.id;
+    ";
+
+    using var conn = CreateConnection();
+
+    // 🔒 Explicit type — no inference
+    IEnumerable<dynamic> rows = await conn.QueryAsync(sql);
+
+    // 🔒 Explicit list creation
+    List<SupplierResourceDto> result = new List<SupplierResourceDto>();
+
+    foreach (dynamic row in rows)
     {
-        const string sql = @"
-        SELECT
-            sc.id,
-            sc.companyemployeeid,
-            sc.companyid,
-            sc.isrefered,
-            sc.workingsince,
-            sc.ctc,
-            sc.jobtitle,
-            sc.role,
-            sc.gender,
-            sc.location,
-            sc.totalexperience,
-            sc.technicalskills,
-            sc.tools,
-            sc.numberofprojects,
-            sc.status,
-            sc.approval_stage,
-            sc.employernote,
-            COALESCE(
-                json_agg(
-                    jsonb_build_object(
-                        'CertificationName', cert.certificationname
-                    )
-                ) FILTER (WHERE cert.id IS NOT NULL),
-                '[]'
-            ) AS certifications
-        FROM public.suppliercapacity sc
-        LEFT JOIN public.suppliercertifications cert
-            ON cert.suppliercapacityid = sc.id
-        WHERE sc.approval_stage = 'Supplier'
-          AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
-        GROUP BY sc.id;
-        ";
 
-        using var conn = CreateConnection();
+        SupplierStatus? status = null;
+        ApprovalStage? stage = null;
 
-        var rows = await conn.QueryAsync<IDictionary<string, object>>(sql);
+        SupplierStatus parsedStatus = default;
+        ApprovalStage parsedStage = default;
 
-        return rows.Select(row =>
+        if (row.status != null &&
+            Enum.TryParse(row.status.ToString(), true, out parsedStatus))
         {
-            Enum.TryParse<SupplierStatus>(
-                row["status"]?.ToString(), true, out var status);
+            status = parsedStatus;
+        }
 
-            Enum.TryParse<ApprovalStage>(
-                row["approval_stage"]?.ToString(), true, out var stage);
-
-            var certificationsJson = row["certifications"]?.ToString() ?? "[]";
-
-            var certifications = Newtonsoft.Json.JsonConvert
-                .DeserializeObject<List<CertificationTemp>>(certificationsJson)
-                ?.Select(x => x.CertificationName)
-                .ToList() ?? new();
+        if (row.approval_stage != null &&
+            Enum.TryParse(row.approval_stage.ToString(), true, out parsedStage))
+        {
+            stage = parsedStage;
+        }
 
 
-            return new SupplierResourceDto
-            {
-                Id = (Guid)row["id"],
-                CompanyEmployeeId = row["companyemployeeid"]?.ToString(),
-                CompanyId = (Guid)row["companyid"],
-                IsRefered = (bool)row["isrefered"],
 
-                WorkingSince = DateOnly.FromDateTime(
-                    (DateTime)row["workingsince"]
-                ),
 
-                CTC = (decimal)row["ctc"],
-                JobTitle = row["jobtitle"]?.ToString(),
-                Role = row["role"]?.ToString(),
-                Gender = row["gender"]?.ToString(),
-                Location = row["location"]?.ToString(),
-                TotalExperience = (decimal)row["totalexperience"],
-                TechnicalSkills = row["technicalskills"]?.ToString(),
-                Tools = row["tools"]?.ToString(),
-                NumberOfProjects = (int)row["numberofprojects"],
-                EmployerNote = row["employernote"]?.ToString(),
+        string certificationsJson = row.certifications != null
+            ? row.certifications.ToString()
+            : "[]";
 
-                Status = status,
-                ApprovalStage = stage,
-                Certifications = certifications
-            };
-        });
+        List<string> certifications =
+            Newtonsoft.Json.JsonConvert
+                .DeserializeObject<List<CertificationTemp>>(certificationsJson)?
+                .Select(c => c.CertificationName)
+                .ToList()
+            ?? new List<string>();
+
+        SupplierResourceDto dto = new SupplierResourceDto
+        {
+            Id = (Guid)row.id,
+            CompanyEmployeeId = (string)row.companyemployeeid,
+            CompanyId = (Guid)row.companyid,
+            IsRefered = (bool)row.isrefered,
+
+            WorkingSince = DateOnly.FromDateTime((DateTime)row.workingsince),
+
+            CTC = (decimal)row.ctc,
+            JobTitle = (string)row.jobtitle,
+            Role = (string)row.role,
+            Gender = (string)row.gender,
+            Location = (string)row.location,
+            TotalExperience = (decimal)row.totalexperience,
+            TechnicalSkills = (string)row.technicalskills,
+            Tools = (string)row.tools,
+            NumberOfProjects = (int)row.numberofprojects,
+            EmployerNote = row.employernote as string,
+
+            Status = status,
+            ApprovalStage = stage,
+            Certifications = certifications
+        };
+
+        result.Add(dto);
     }
-    private class CertificationTemp
-    {
-        public string CertificationName { get; set; }
-    }
+
+    return result;
+}
+
+private class CertificationTemp
+{
+    public string CertificationName { get; set; }
+}
+
    
     }
 }
