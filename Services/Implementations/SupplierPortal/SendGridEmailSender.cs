@@ -34,8 +34,31 @@ public class SendGridEmailSender : IEmailSender
             from,
             toEmail,
             subject,
-            null,
-            htmlBody
+            plainTextContent: null,
+            htmlContent: htmlBody
+        );
+
+        // 📎 Attach SLA PDF (LOCAL FILE)
+        var slaPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "Presentation",
+            "EmailTemplates",
+            "Attachments",
+            "SLA - Talented Staff.pdf"
+        );
+
+        if (!File.Exists(slaPath))
+        {
+            throw new FileNotFoundException("SLA PDF not found", slaPath);
+        }
+
+        var pdfBytes = await File.ReadAllBytesAsync(slaPath);
+        var pdfBase64 = Convert.ToBase64String(pdfBytes);
+
+        msg.AddAttachment(
+            "Supplier_SLA.pdf",        // attachment name shown to user
+            pdfBase64,
+            "application/pdf"
         );
 
         var response = await client.SendEmailAsync(msg);
