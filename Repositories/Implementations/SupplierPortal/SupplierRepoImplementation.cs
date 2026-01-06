@@ -3,6 +3,7 @@ using System.Data;
 using Shared;
 using Dapper;
 using FinancialManagementDataAccess.Models;
+using Newtonsoft.Json;
 using Npgsql;
 using Shared.Enum;
 
@@ -827,7 +828,100 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
         throw;
     }
 }
+   
+   
+   
 
 
+      public async Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
+    {
+        const string sql = @"
+        SELECT
+            sc.id,
+            sc.companyemployeeid,
+            sc.companyid,
+            sc.isrefered,
+            sc.workingsince,
+            sc.ctc,
+            sc.jobtitle,
+            sc.role,
+            sc.gender,
+            sc.location,
+            sc.totalexperience,
+            sc.technicalskills,
+            sc.tools,
+            sc.numberofprojects,
+            sc.status,
+            sc.approval_stage,
+            sc.employernote,
+            COALESCE(
+                json_agg(
+                    jsonb_build_object(
+                        'CertificationName', cert.certificationname
+                    )
+                ) FILTER (WHERE cert.id IS NOT NULL),
+                '[]'
+            ) AS certifications
+        FROM public.suppliercapacity sc
+        LEFT JOIN public.suppliercertifications cert
+            ON cert.suppliercapacityid = sc.id
+        WHERE sc.approval_stage = 'Supplier'
+          AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
+        GROUP BY sc.id;
+        ";
+
+        using var conn = CreateConnection();
+
+        var rows = await conn.QueryAsync<IDictionary<string, object>>(sql);
+
+        return rows.Select(row =>
+        {
+            Enum.TryParse<SupplierStatus>(
+                row["status"]?.ToString(), true, out var status);
+
+            Enum.TryParse<ApprovalStage>(
+                row["approval_stage"]?.ToString(), true, out var stage);
+
+            var certificationsJson = row["certifications"]?.ToString() ?? "[]";
+
+            var certifications = Newtonsoft.Json.JsonConvert
+                .DeserializeObject<List<CertificationTemp>>(certificationsJson)
+                ?.Select(x => x.CertificationName)
+                .ToList() ?? new();
+
+
+            return new SupplierResourceDto
+            {
+                Id = (Guid)row["id"],
+                CompanyEmployeeId = row["companyemployeeid"]?.ToString(),
+                CompanyId = (Guid)row["companyid"],
+                IsRefered = (bool)row["isrefered"],
+
+                WorkingSince = DateOnly.FromDateTime(
+                    (DateTime)row["workingsince"]
+                ),
+
+                CTC = (decimal)row["ctc"],
+                JobTitle = row["jobtitle"]?.ToString(),
+                Role = row["role"]?.ToString(),
+                Gender = row["gender"]?.ToString(),
+                Location = row["location"]?.ToString(),
+                TotalExperience = (decimal)row["totalexperience"],
+                TechnicalSkills = row["technicalskills"]?.ToString(),
+                Tools = row["tools"]?.ToString(),
+                NumberOfProjects = (int)row["numberofprojects"],
+                EmployerNote = row["employernote"]?.ToString(),
+
+                Status = status,
+                ApprovalStage = stage,
+                Certifications = certifications
+            };
+        });
+    }
+    private class CertificationTemp
+    {
+        public string CertificationName { get; set; }
+    }
+   
     }
 }

@@ -123,7 +123,9 @@ namespace DynamicFormService.DynamicFormServiceImplementation
                 ? ApprovalStage.HR          // Option 3
                 : ApprovalStage.Supplier;   // Option 1
 
-            if (!dto.IsRefered && dto.TotalExperience >= 1)
+            
+            if (!dto.IsRefered &&
+                dto.WorkingSince <= DateOnly.FromDateTime(DateTime.Today.AddYears(-1)))
             {
                 dto.Status = SupplierStatus.Approved;
             }
@@ -375,7 +377,8 @@ namespace DynamicFormService.DynamicFormServiceImplementation
 
             await _supplierRepoInterface.UpdateCompanyAsync(companyId, dto);
         }
-
-
+        
+        public Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
+            => _supplierRepoInterface.GetEligibleSuppliersAsync();
     }
 }

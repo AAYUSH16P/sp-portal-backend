@@ -6,6 +6,7 @@ namespace DynamicFormRepo.DynamicFormRepoInterface
 {
     public interface ISupplierRepoInterface
     {
+        Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync();
         Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request);
         Task<string?> GetPasswordHashAsync(Guid companyId);
 

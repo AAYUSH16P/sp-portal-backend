@@ -5,6 +5,8 @@ namespace DynamicFormService.DynamicFormServiceInterface
 {
     public interface ISupplierServiceInterface
     {
+        Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync();
+
         Task UpdateSupplierResourceAsync(SupplierResourceDto dto);
 
         Task<long> SheetUploadAsync(

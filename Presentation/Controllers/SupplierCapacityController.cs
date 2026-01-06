@@ -30,6 +30,14 @@ public class SupplierCapacityController : ControllerBase
         
     }
 
+    [HttpGet("eligible")]
+    public async Task<IActionResult> GetEligibleSuppliers()
+    {
+        var result = await _service.GetEligibleSuppliersAsync();
+        return Ok(result);
+    }
+    
+    
     [HttpPost("{id}/approve")]
     public async Task<IActionResult> Approve(Guid id)
     {
