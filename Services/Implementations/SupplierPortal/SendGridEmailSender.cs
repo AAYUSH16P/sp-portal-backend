@@ -2,6 +2,7 @@ using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Extensions.Configuration;
 using DynamicFormService.DynamicFormServiceInterface;
+using Google.Apis.Logging;
 
 namespace Infrastructure.Email;
 
@@ -10,14 +11,15 @@ public class SendGridEmailSender : IEmailSender
     private readonly string _apiKey;
     private readonly string _fromEmail;
     private readonly string _fromName;
-
-    public SendGridEmailSender(IConfiguration config)
+   private readonly  ILogger _logger;
+    public SendGridEmailSender(IConfiguration config,ILogger<SendGridEmailSender> logger)
     {
         _apiKey = config["SendGrid:ApiKey"]
                   ?? throw new Exception("SendGrid API Key missing");
 
         _fromEmail = config["SendGrid:FromEmail"]!;
         _fromName = config["SendGrid:FromName"]!;
+        _logger=logger;
     }
 
     public async Task SendAsync(string to, string subject, string htmlBody)
@@ -38,14 +40,17 @@ public class SendGridEmailSender : IEmailSender
             htmlContent: htmlBody
         );
 
-        // 📎 Attach SLA PDF (LOCAL FILE)
+
         var slaPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Presentation",
+            AppContext.BaseDirectory,
             "EmailTemplates",
             "Attachments",
             "SLA - Talented Staff.pdf"
         );
+        
+        _logger.Info("SLA PDF path resolved to: {Path}", slaPath);
+
+
 
         if (!File.Exists(slaPath))
         {
