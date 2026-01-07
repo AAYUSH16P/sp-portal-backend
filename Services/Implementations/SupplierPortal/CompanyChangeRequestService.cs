@@ -67,7 +67,6 @@ public class CompanyChangeRequestService : ICompanyChangeRequestService
         var hash = PasswordHasher.Hash(newPassword);
 
         await _repo.UpdatePasswordAsync(record.CompanyId, hash);
-        await _repo.DeleteResetTokenAsync(token);
 
     }
 }
