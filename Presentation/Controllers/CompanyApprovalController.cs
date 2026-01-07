@@ -65,5 +65,16 @@ public class CompanyApprovalController : ControllerBase
         var result = await _service.GetHrRejectedAsync(companyId);
         return Ok(result);
     }
+    
+    [HttpPatch("{companyId}/acknowledge")]
+    public async Task<IActionResult> AcknowledgeCompany(Guid companyId)
+    {
+        var result = await _service.AcknowledgeCompanyAsync(companyId);
+
+        if (!result)
+            return NotFound(new { message = "Company not found" });
+
+        return Ok(new { message = "Company acknowledged successfully" });
+    }
 
 }

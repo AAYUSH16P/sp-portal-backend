@@ -7,4 +7,6 @@ public class CompanyLoginDataDto
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsSlaSigned { get; set; }
     public string IsPasswordChanged {get; set;} = string.Empty;
+    public bool IsAcknowledged { get; set; }
+    public DateTime? NextMeetingAt { get; set; }
 }

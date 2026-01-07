@@ -67,11 +67,13 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
 
         return await conn.QueryFirstOrDefaultAsync<CompanyLoginDataDto>(
             @"SELECT 
-              c.id            AS CompanyId,
-              c.company_name  AS CompanyName,
-              c.password_hash AS PasswordHash,
-              c.is_sla_signed AS IsSlaSigned,
-              c.is_password_changed AS IsPasswordChanged
+              c.id                     AS CompanyId,
+              c.company_name           AS CompanyName,
+              c.password_hash          AS PasswordHash,
+              c.is_sla_signed          AS IsSlaSigned,
+              c.is_password_changed    AS IsPasswordChanged,
+              c.is_acknowledged        AS IsAcknowledged,
+              c.next_meeting_at        AS NextMeetingAt
           FROM companies c
           INNER JOIN company_contacts cc
               ON cc.company_id = c.id
@@ -81,6 +83,7 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
             new { email }
         );
     }
+
 
     
     
@@ -349,5 +352,27 @@ ORDER BY c.created_at DESC;
     return dict.Values;
 }
 
+ 
+public async Task<bool> MarkAcknowledgedAsync(Guid companyId)
+{
+    using var connection = CreateConnection();
 
+    const string sql = @"
+        UPDATE companies
+        SET 
+            is_acknowledged = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = @CompanyId;
+    ";
+
+    var rowsAffected = await connection.ExecuteAsync(sql, new
+    {
+        CompanyId = companyId
+    });
+
+    return rowsAffected > 0;
+}
+
+
+ 
 }

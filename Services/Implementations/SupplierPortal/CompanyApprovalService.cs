@@ -163,6 +163,8 @@ public class CompanyApprovalService : ICompanyApprovalService
             dto.Email,
             data.CompanyName,
             data.IsPasswordChanged,
+            data.IsAcknowledged,
+            data.NextMeetingAt,
             out var expiresAt
         );
 
@@ -198,4 +200,8 @@ public class CompanyApprovalService : ICompanyApprovalService
         => _repo.GetHrRejectedAsync(companyId);
 
 
+    public async Task<bool> AcknowledgeCompanyAsync(Guid companyId)
+    {
+        return await _repo.MarkAcknowledgedAsync(companyId);
+    }
 }

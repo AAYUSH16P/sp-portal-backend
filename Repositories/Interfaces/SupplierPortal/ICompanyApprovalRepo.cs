@@ -14,4 +14,6 @@ public interface ICompanyApprovalRepo
     Task<(string Email, string ContactName)?> GetPrimaryContactAsync(Guid companyId);
     Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId);
     Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId);
+    Task<bool> MarkAcknowledgedAsync(Guid companyId);
+
 }

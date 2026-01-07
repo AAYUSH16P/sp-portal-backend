@@ -13,5 +13,7 @@ public interface ICompanyApprovalService
     Task<IEnumerable<CompanyDto>> GetPendingCompaniesAsync();
     Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId);
     Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId);
+    Task<bool> AcknowledgeCompanyAsync(Guid companyId);
+
 
 }
