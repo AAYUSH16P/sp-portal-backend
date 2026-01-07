@@ -26,6 +26,6 @@ public class EmailService : IEmailService
         await _sender.SendAsync(
             request.To,
             subject,
-            body);
+            body,false);
     }
 }

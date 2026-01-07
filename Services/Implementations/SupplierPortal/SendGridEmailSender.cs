@@ -23,8 +23,10 @@ public class SendGridEmailSender : IEmailSender
         _logger=logger;
     }
 
-    public async Task SendAsync(string to, string subject, string htmlBody)
+    public async Task SendAsync(string to, string subject, string htmlBody, bool? status)
     {
+        bool attachSla = status == true;
+
         if (string.IsNullOrWhiteSpace(to))
             throw new ArgumentException("Recipient email is missing");
 
@@ -61,11 +63,15 @@ public class SendGridEmailSender : IEmailSender
         var pdfBytes = await File.ReadAllBytesAsync(slaPath);
         var pdfBase64 = Convert.ToBase64String(pdfBytes);
 
-        msg.AddAttachment(
-            "Supplier_SLA.pdf",        // attachment name shown to user
-            pdfBase64,
-            "application/pdf"
-        );
+        if (attachSla)
+        {
+            msg.AddAttachment(
+                "Supplier_SLA.pdf",        // attachment name shown to user
+                pdfBase64,
+                "application/pdf"
+            );
+        }
+       
 
         var response = await client.SendEmailAsync(msg);
 

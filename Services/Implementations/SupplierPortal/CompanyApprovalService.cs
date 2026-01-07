@@ -87,7 +87,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             out var subject
         );
 
-        await _emailSender.SendAsync(email, subject, body);
+        await _emailSender.SendAsync(email, subject, body,true);
 
         _logger.LogInformation(
             "Approval email sent successfully. CompanyId: {CompanyId}, Email: {Email}",
@@ -119,7 +119,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             },
             out var subject);
 
-        await _emailSender.SendAsync(email, subject, body);
+        await _emailSender.SendAsync(email, subject, body,false);
 }
     
     

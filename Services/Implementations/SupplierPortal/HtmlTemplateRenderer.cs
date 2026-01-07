@@ -23,6 +23,7 @@ public class HtmlTemplateRenderer : ITemplateRenderer
             EmailTemplateType.SupplierRejected => "SupplierRejected.html",
             EmailTemplateType.SupplierApproved => "SupplierApproved.html",
             EmailTemplateType.MeetingScheduled => "MeetingScheduled.html",
+            EmailTemplateType.ForgotPassword   => "ForgotPassword.html", // ✅
             _ => throw new Exception("Invalid template")
         };
 
@@ -36,6 +37,9 @@ public class HtmlTemplateRenderer : ITemplateRenderer
 
             EmailTemplateType.MeetingScheduled =>
                 "Meeting Scheduled – Microsoft Teams Invitation",
+
+            EmailTemplateType.ForgotPassword =>
+                "Reset Your Password – Westgate Supplier Portal", // ✅
 
             _ => string.Empty
         };
@@ -54,4 +58,5 @@ public class HtmlTemplateRenderer : ITemplateRenderer
 
         return html;
     }
+
 }
