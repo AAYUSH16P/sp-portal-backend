@@ -1,6 +1,7 @@
 using DynamicFormService.DynamicFormServiceInterface;
 using Microsoft.AspNetCore.Mvc;
 using Shared;
+using Shared.Dtos;
 
 namespace DynamicFormPresentation.Controllers;
 
@@ -44,5 +45,20 @@ public class ChangeController : Controller
         return Ok(new { message = "Change request submitted" });
     }
 
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequestDto dto)
+    {
+        await _service.ForgotPasswordAsync(dto.Email);
+        return Ok(new { message = "If email exists, reset link sent" });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequestDto dto)
+    {
+        await _service.ResetPasswordAsync(dto.Token, dto.NewPassword);
+        return Ok(new { message = "Password reset successful" });
+    }
 
 }

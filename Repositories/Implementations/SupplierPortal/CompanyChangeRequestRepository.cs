@@ -296,6 +296,72 @@ private async Task ReplaceCertifications(
     }
     
     
+    public async Task<Guid?> GetCompanyIdByPrimaryEmailAsync(string email)
+    {
+        using var conn = CreateConnection();
+
+        return await conn.QueryFirstOrDefaultAsync<Guid?>(@"
+        SELECT c.id
+        FROM companies c
+        INNER JOIN company_contacts cc
+            ON cc.company_id = c.id
+        WHERE cc.email = @Email
+          AND cc.contact_type = 'PRIMARY'
+    ", new { Email = email });
+    }
+
+    
+    
+    public async Task SaveResetTokenAsync(
+        Guid companyId,
+        string token,
+        DateTime expiresAt)
+    {
+        using var conn = CreateConnection();
+
+        await conn.ExecuteAsync(@"
+        UPDATE companies
+        SET reset_password_token = @Token,
+            reset_password_expires_at = @ExpiresAt
+        WHERE id = @CompanyId
+    ", new
+        {
+            CompanyId = companyId,
+            Token = token,
+            ExpiresAt = expiresAt
+        });
+    }
+
+    
+    public async Task<CompanyResetProjection?> GetByResetTokenAsync(string token)
+    {
+        using var conn = CreateConnection();
+
+        return await conn.QueryFirstOrDefaultAsync<CompanyResetProjection>(@"
+        SELECT
+            id AS CompanyId,
+            reset_password_expires_at AS ExpiresAt
+        FROM companies
+        WHERE reset_password_token = @Token
+    ", new { Token = token });
+    }
+
+    
+    public async Task UpdatePasswordAsync(Guid companyId, string passwordHash)
+    {
+        using var conn = CreateConnection();
+
+        await conn.ExecuteAsync(@"
+        UPDATE companies
+        SET password_hash = @Hash,
+            is_password_changed = true,
+            reset_password_token = NULL,
+            reset_password_expires_at = NULL
+        WHERE id = @CompanyId
+    ", new { Hash = passwordHash, CompanyId = companyId });
+    }
+
+    
     
     private static readonly Dictionary<string, string> FieldColumnMap =
         new()

@@ -4,5 +4,6 @@ public enum EmailTemplateType
 {
     SupplierRejected,
     SupplierApproved,
-    MeetingScheduled
+    MeetingScheduled,
+    ForgotPassword
 }
