@@ -417,40 +417,40 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
 
             var sql = @"
                   SELECT 
-    sc.id                    AS ""Id"",
-    sc.companyid             AS ""CompanyId"",
-    sc.companyemployeeid     AS ""CompanyEmployeeId"",
-    sc.isrefered             AS ""IsRefered"",
-    sc.workingsince          AS ""WorkingSince"",
-    sc.ctc                   AS ""CTC"",
-    sc.jobtitle              AS ""JobTitle"",
-    sc.role                  AS ""Role"",
-    sc.gender                AS ""Gender"",
-    sc.location              AS ""Location"",
-    sc.totalexperience       AS ""TotalExperience"",
-    sc.technicalskills       AS ""TechnicalSkills"",
-    sc.tools                 AS ""Tools"",
-    sc.numberofprojects      AS ""NumberOfProjects"",
-    sc.status                AS ""Status"",
-    sc.approval_stage        AS ""ApprovalStage"",
-    sc.employernote          AS ""EmployerNote"",
+                    sc.id                    AS ""Id"",
+                    sc.companyid             AS ""CompanyId"",
+                    sc.companyemployeeid     AS ""CompanyEmployeeId"",
+                    sc.isrefered             AS ""IsRefered"",
+                    sc.workingsince          AS ""WorkingSince"",
+                    sc.ctc                   AS ""CTC"",
+                    sc.jobtitle              AS ""JobTitle"",
+                    sc.role                  AS ""Role"",
+                    sc.gender                AS ""Gender"",
+                    sc.location              AS ""Location"",
+                    sc.totalexperience       AS ""TotalExperience"",
+                    sc.technicalskills       AS ""TechnicalSkills"",
+                    sc.tools                 AS ""Tools"",
+                    sc.numberofprojects      AS ""NumberOfProjects"",
+                    sc.status                AS ""Status"",
+                    sc.approval_stage        AS ""ApprovalStage"",
+                    sc.employernote          AS ""EmployerNote"",
 
-    c.id                     AS ""CompanyId_FromJoin"",
-    c.company_name           AS ""CompanyName"",
+                    c.id                     AS ""CompanyId_FromJoin"",
+                    c.company_name           AS ""CompanyName"",
 
-    cert.id                  AS cert_id,
-    cert.certificationname   AS ""CertificationName""
-FROM suppliercapacity sc
-INNER JOIN companies c
-    ON c.id = sc.companyid
-LEFT JOIN suppliercertifications cert
-    ON sc.id = cert.suppliercapacityid
-WHERE sc.companyid = @CompanyId
-  AND sc.approval_stage = @Stage
-  AND (
-        @Status IS NULL
-        OR sc.status = @Status::supplier_status
-      );
+                    cert.id                  AS cert_id,
+                    cert.certificationname   AS ""CertificationName""
+                FROM suppliercapacity sc
+                INNER JOIN companies c
+                    ON c.id = sc.companyid
+                LEFT JOIN suppliercertifications cert
+                    ON sc.id = cert.suppliercapacityid
+                WHERE sc.companyid = @CompanyId
+                  AND sc.approval_stage = @Stage
+                  AND (
+                        @Status IS NULL
+                        OR sc.status = @Status::supplier_status
+                      );
                     ";
 
             var dict = new Dictionary<Guid, SupplierCapacity>();
@@ -464,7 +464,6 @@ WHERE sc.companyid = @CompanyId
                         capacity = sc;
                         capacity.Certifications = new List<SupplierCertification>();
 
-                        // 🔥 CRITICAL FIX
                         capacity.CompanyId = sc.CompanyId;
                         capacity.CompanyName = sc.CompanyName;
 
@@ -484,90 +483,84 @@ WHERE sc.companyid = @CompanyId
                 },
                 splitOn: "cert_id"
             );
-
-
-
+            
             return dict.Values;
         }
         
         
         
-         public async Task<IEnumerable<SupplierCapacity>> GetAllDataByStageAsync(
-                ApprovalStage stage,
-                SupplierStatus? status)
+        public async Task<IEnumerable<SupplierCapacity>> GetAllDataByStageAsync(
+    ApprovalStage stage,
+    SupplierStatus? status)
+{
+    using var conn = CreateConnection();
+
+    var sql = @"
+        SELECT 
+            sc.id                    AS ""Id"",
+            sc.companyid             AS ""CompanyId"",
+            sc.companyemployeeid     AS ""CompanyEmployeeId"",
+            sc.isrefered             AS ""IsRefered"",
+            sc.workingsince          AS ""WorkingSince"",
+            sc.ctc                   AS ""CTC"",
+            sc.jobtitle              AS ""JobTitle"",
+            sc.role                  AS ""Role"",
+            sc.gender                AS ""Gender"",
+            sc.location              AS ""Location"",
+            sc.totalexperience       AS ""TotalExperience"",
+            sc.technicalskills       AS ""TechnicalSkills"",
+            sc.tools                 AS ""Tools"",
+            sc.numberofprojects      AS ""NumberOfProjects"",
+            sc.status                AS ""Status"",
+            sc.approval_stage        AS ""ApprovalStage"",
+            sc.employernote          AS ""EmployerNote"",
+            sc.createdat             AS ""CreatedAt"",
+
+            c.company_name           AS ""CompanyName"",
+
+            cert.id                  AS cert_id,
+            cert.certificationname   AS ""CertificationName""
+        FROM suppliercapacity sc
+        INNER JOIN companies c
+            ON c.id = sc.companyid
+        LEFT JOIN suppliercertifications cert
+            ON sc.id = cert.suppliercapacityid
+        WHERE sc.approval_stage = @Stage
+          AND (
+                @Status IS NULL
+                OR sc.status = @Status::supplier_status
+              )
+        ORDER BY sc.createdat DESC;
+    ";
+
+    var dict = new Dictionary<Guid, SupplierCapacity>();
+
+    await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+        sql,
+        (sc, cert) =>
+        {
+            if (!dict.TryGetValue(sc.Id, out var capacity))
             {
-                using var conn = CreateConnection();
-
-                var sql = @"
-                    SELECT 
-                        sc.id                    AS ""Id"",
-                        sc.companyid             AS ""CompanyId"",
-                        sc.companyemployeeid     AS ""CompanyEmployeeId"",
-                        sc.isrefered             AS ""IsRefered"",
-                        sc.workingsince          AS ""WorkingSince"",
-                        sc.ctc                   AS ""CTC"",
-                        sc.jobtitle              AS ""JobTitle"",
-                        sc.role                  AS ""Role"",
-                        sc.gender                AS ""Gender"",
-                        sc.location              AS ""Location"",
-                        sc.totalexperience       AS ""TotalExperience"",
-                        sc.technicalskills       AS ""TechnicalSkills"",
-                        sc.tools                 AS ""Tools"",
-                        sc.numberofprojects      AS ""NumberOfProjects"",
-                        sc.status                AS ""Status"",
-                        sc.approval_stage        AS ""ApprovalStage"",
-                        sc.employernote          AS ""EmployerNote"",
-
-                        c.id                     AS ""CompanyId_FromJoin"",
-                        c.company_name           AS ""CompanyName"",
-
-                        cert.id                  AS cert_id,
-                        cert.certificationname   AS ""CertificationName""
-                    FROM suppliercapacity sc
-                    INNER JOIN companies c
-                        ON c.id = sc.companyid
-                    LEFT JOIN suppliercertifications cert
-                        ON sc.id = cert.suppliercapacityid
-                    WHERE sc.approval_stage = @Stage
-                      AND (
-                            @Status IS NULL
-                            OR sc.status = @Status::supplier_status
-                          );
-                ";
-
-                var dict = new Dictionary<Guid, SupplierCapacity>();
-
-                await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
-                    sql,
-                    (sc, cert) =>
-                    {
-                        if (!dict.TryGetValue(sc.Id, out var capacity))
-                        {
-                            capacity = sc;
-                            capacity.Certifications = new List<SupplierCertification>();
-
-                            // ✅ Preserve company details
-                            capacity.CompanyId = sc.CompanyId;
-                            capacity.CompanyName = sc.CompanyName;
-
-                            dict.Add(sc.Id, capacity);
-                        }
-
-                        if (cert != null)
-                            capacity.Certifications.Add(cert);
-
-                        return capacity;
-                    },
-                    new
-                    {
-                        Stage = stage.ToString(),
-                        Status = status?.ToString()
-                    },
-                    splitOn: "cert_id"
-                );
-
-                return dict.Values;
+                capacity = sc;
+                capacity.Certifications = new List<SupplierCertification>();
+                dict.Add(sc.Id, capacity);
             }
+
+            if (cert != null)
+                capacity.Certifications.Add(cert);
+
+            return capacity;
+        },
+        new
+        {
+            Stage = stage.ToString(),
+            Status = status?.ToString()
+        },
+        splitOn: "cert_id"
+    );
+
+    return dict.Values;
+}
 
         
         

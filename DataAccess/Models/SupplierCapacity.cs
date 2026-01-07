@@ -26,5 +26,7 @@ public class SupplierCapacity
     public ApprovalStage ApprovalStage { get; set; }
     public string Remark { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
     public List<SupplierCertification> Certifications { get; set; }
 }
