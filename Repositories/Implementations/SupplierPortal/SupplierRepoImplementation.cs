@@ -491,7 +491,7 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
                     LEFT JOIN suppliercertifications cert
                         ON sc.id = cert.suppliercapacityid
                     WHERE sc.companyid = @CompanyId
-                      AND sc.approval_stage = @Stage
+                     AND sc.approval_stage IN ('Supplier', 'Completed')
                       AND (
                             @Status IS NULL
                             OR sc.status = @Status::supplier_status
