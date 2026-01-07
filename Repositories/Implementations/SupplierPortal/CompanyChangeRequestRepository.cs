@@ -75,44 +75,120 @@ public class CompanyChangeRequestRepository : ICompanyChangeRequestRepository
         return result.ToList();
     }
 
-    public async Task ApproveAsync(Guid requestId, Guid adminId)
+   public async Task ApproveAsync(Guid requestId, Guid adminId)
+{
+    using var conn = CreateConnection();
+    conn.Open();
+    using var tx = conn.BeginTransaction();
+
+    try
     {
-        using var conn = CreateConnection();
-        conn.Open();
-        using var tx = conn.BeginTransaction();
+        var request = await conn.QuerySingleAsync<CompanyChangeRequestProjection>(@"
+            SELECT 
+                id,
+                company_id AS CompanyId,
+                field_key  AS FieldKey,
+                new_value  AS NewValue
+            FROM company_change_requests
+            WHERE id = @Id
+        ", new { Id = requestId }, tx);
 
-        try
+        switch (request.FieldKey)
         {
-            var request = await conn.QuerySingleAsync<CompanyChangeRequestProjection>(@"
-    SELECT 
-        company_id AS CompanyId,
-        field_key  AS FieldKey,
-        new_value  AS NewValue
-    FROM company_change_requests
-    WHERE id = @Id
-", new { Id = requestId }, tx);
+            // ================= COMPANY =================
+            case "CompanyName":
+                await UpdateCompany(conn, tx, request.CompanyId, "company_name", request.NewValue);
+                break;
 
+            case "CompanyWebsite":
+                await UpdateCompany(conn, tx, request.CompanyId, "company_website", request.NewValue);
+                break;
 
-            if (!FieldColumnMap.TryGetValue(request.FieldKey, out var columnName))
-            {
-                throw new InvalidOperationException("Invalid field key");
-            }
+            case "BusinessType":
+                await UpdateCompany(conn, tx, request.CompanyId, "business_type", request.NewValue);
+                break;
 
-            var sql = $@"
-    UPDATE companies
-    SET {columnName} = @Value,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE id = @CompanyId
-";
+            case "CompanySize":
+                await UpdateCompany(conn, tx, request.CompanyId, "company_size", request.NewValue);
+                break;
 
-            await conn.ExecuteAsync(sql, new
-            {
-                Value = request.NewValue,
-                CompanyId = request.CompanyId
-            }, tx);
+            case "YearEstablished":
+                await UpdateCompany(conn, tx, request.CompanyId, "year_established", request.NewValue);
+                break;
 
+            case "CompanyOverview":
+                await UpdateCompany(conn, tx, request.CompanyId, "company_overview", request.NewValue);
+                break;
 
-            await conn.ExecuteAsync(@"
+            // ================= ADDRESS =================
+            case "AddressLine1":
+                await UpdateAddress(conn, tx, request.CompanyId, "address_line1", request.NewValue);
+                break;
+
+            case "AddressLine2":
+                await UpdateAddress(conn, tx, request.CompanyId, "address_line2", request.NewValue);
+                break;
+
+            case "City":
+                await UpdateAddress(conn, tx, request.CompanyId, "city", request.NewValue);
+                break;
+
+            case "State":
+                await UpdateAddress(conn, tx, request.CompanyId, "state", request.NewValue);
+                break;
+
+            case "PostalCode":
+                await UpdateAddress(conn, tx, request.CompanyId, "postal_code", request.NewValue);
+                break;
+
+            case "Country":
+                await UpdateAddress(conn, tx, request.CompanyId, "country", request.NewValue);
+                break;
+
+            // ================= PRIMARY CONTACT =================
+            case "PrimaryContactName":
+                await UpdateContact(conn, tx, request.CompanyId, "PRIMARY", "contact_name", request.NewValue);
+                break;
+
+            case "PrimaryContactRole":
+                await UpdateContact(conn, tx, request.CompanyId, "PRIMARY", "role_designation", request.NewValue);
+                break;
+
+            case "PrimaryContactEmail":
+                await UpdateContact(conn, tx, request.CompanyId, "PRIMARY", "email", request.NewValue);
+                break;
+
+            case "PrimaryContactPhone":
+                await UpdateContact(conn, tx, request.CompanyId, "PRIMARY", "phone", request.NewValue);
+                break;
+
+            // ================= SECONDARY CONTACT =================
+            case "SecondaryContactName":
+                await UpdateContact(conn, tx, request.CompanyId, "SECONDARY", "contact_name", request.NewValue);
+                break;
+
+            case "SecondaryContactRole":
+                await UpdateContact(conn, tx, request.CompanyId, "SECONDARY", "role_designation", request.NewValue);
+                break;
+
+            case "SecondaryContactEmail":
+                await UpdateContact(conn, tx, request.CompanyId, "SECONDARY", "email", request.NewValue);
+                break;
+
+            case "SecondaryContactPhone":
+                await UpdateContact(conn, tx, request.CompanyId, "SECONDARY", "phone", request.NewValue);
+                break;
+
+            // ================= CERTIFICATIONS =================
+            case "Certifications":
+                await ReplaceCertifications(conn, tx, request.CompanyId, request.NewValue);
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unsupported field key: {request.FieldKey}");
+        }
+
+        await conn.ExecuteAsync(@"
             UPDATE company_change_requests
             SET status = 'APPROVED',
                 reviewed_by = @AdminId,
@@ -120,15 +196,85 @@ public class CompanyChangeRequestRepository : ICompanyChangeRequestRepository
             WHERE id = @Id
         ", new { Id = requestId, AdminId = adminId }, tx);
 
-            tx.Commit();
-        }
-        catch
-        {
-            tx.Rollback();
-            throw;
-        }
+        tx.Commit();
     }
+    catch
+    {
+        tx.Rollback();
+        throw;
+    }
+}
 
+   
+   
+private Task UpdateCompany(IDbConnection conn, IDbTransaction tx,
+    Guid companyId, string column, string value)
+{
+    return conn.ExecuteAsync($@"
+        UPDATE companies
+        SET {column} = @Value,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = @CompanyId
+    ", new { Value = value, CompanyId = companyId }, tx);
+}
+
+
+
+private Task UpdateAddress(IDbConnection conn, IDbTransaction tx,
+    Guid companyId, string column, string value)
+{
+    return conn.ExecuteAsync($@"
+        UPDATE company_addresses
+        SET {column} = @Value
+        WHERE company_id = @CompanyId
+    ", new { Value = value, CompanyId = companyId }, tx);
+}
+
+
+
+private Task UpdateContact(IDbConnection conn, IDbTransaction tx,
+    Guid companyId, string type, string column, string value)
+{
+    return conn.ExecuteAsync($@"
+        UPDATE company_contacts
+        SET {column} = @Value
+        WHERE company_id = @CompanyId
+          AND contact_type = @Type
+    ", new { Value = value, CompanyId = companyId, Type = type }, tx);
+}
+
+
+
+private async Task ReplaceCertifications(
+    IDbConnection conn,
+    IDbTransaction tx,
+    Guid companyId,
+    string value)
+{
+    await conn.ExecuteAsync(
+        "DELETE FROM company_certifications WHERE company_id = @CompanyId",
+        new { CompanyId = companyId }, tx);
+
+    var certs = value.Split(',')
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x));
+
+    foreach (var cert in certs)
+    {
+        await conn.ExecuteAsync(@"
+            INSERT INTO company_certifications (company_id, certification_name)
+            VALUES (@CompanyId, @Name)
+        ", new { CompanyId = companyId, Name = cert }, tx);
+    }
+}
+
+
+
+    
+    
+    
+    
+    
     public async Task RejectAsync(Guid requestId, string remark, Guid adminId)
     {
         using var conn = CreateConnection();
