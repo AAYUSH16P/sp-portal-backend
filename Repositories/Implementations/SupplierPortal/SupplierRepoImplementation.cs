@@ -3,6 +3,7 @@ using System.Data;
 using Shared;
 using Dapper;
 using FinancialManagementDataAccess.Models;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Npgsql;
 using Shared.Enum;
@@ -12,10 +13,13 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
     public class SupplierRepoImplementation : ISupplierRepoInterface
     {
         private readonly string _connectionString;
+        private readonly ILogger<SupplierRepoImplementation> _logger;
 
-        public SupplierRepoImplementation(IDbConnection db)
+        public SupplierRepoImplementation(IDbConnection db,ILogger<SupplierRepoImplementation> logger)
         {
             _connectionString = db.ConnectionString;
+            _logger = logger;
+
         }
 
         private IDbConnection CreateConnection()
@@ -23,15 +27,30 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
             return new NpgsqlConnection(_connectionString);
         }
         
-      public async Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request)
+    public async Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request)
 {
+    _logger.LogInformation("SubmitCompanyAsync started");
+
+    // 🔍 CRITICAL LOG: incoming value
+    _logger.LogInformation(
+        "Incoming Total Projects Executed (ProjectExecuted) = {ProjectExecuted}",
+        request.ProjectExecuted
+    );
+
     using var conn = CreateConnection();
     await ((NpgsqlConnection)conn).OpenAsync();
     using var transaction = conn.BeginTransaction();
 
     try
     {
-        // 1️⃣ Insert Company (ALL FIELDS)
+        // 🔍 Log before insert
+        var totalProjectsExecuted = request.ProjectExecuted;
+        _logger.LogInformation(
+            "Value being sent to DB for total_projects_executed = {TotalProjectsExecuted}",
+            totalProjectsExecuted
+        );
+
+        // 1️⃣ Insert Company
         var companyId = await conn.ExecuteScalarAsync<Guid>(@"
             INSERT INTO companies
             (
@@ -68,9 +87,26 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
             request.CompanySize,
             request.YearEstablished,
             request.CompanyOverview,
-            TotalProjectsExecuted =  request.ProjectExecuted,
+            TotalProjectsExecuted = totalProjectsExecuted, // 👈 explicit variable
             request.DomainExpertise
         }, transaction);
+
+        _logger.LogInformation(
+            "Company inserted successfully. CompanyId = {CompanyId}",
+            companyId
+        );
+
+        // 🔍 OPTIONAL: verify immediately from DB
+        var dbValue = await conn.ExecuteScalarAsync<int?>(
+            "SELECT total_projects_executed FROM companies WHERE id = @CompanyId",
+            new { CompanyId = companyId },
+            transaction
+        );
+
+        _logger.LogInformation(
+            "DB value after insert for total_projects_executed = {DbValue}",
+            dbValue
+        );
 
         // 2️⃣ Insert Address
         await conn.ExecuteAsync(@"
@@ -104,7 +140,7 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
             Phone = request.PrimaryContactPhone
         }, transaction);
 
-        // 4️⃣ Insert SECONDARY Contact (ONLY IF PROVIDED)
+        // 4️⃣ Insert SECONDARY Contact
         if (!string.IsNullOrWhiteSpace(request.SecondaryContactName))
         {
             await conn.ExecuteAsync(@"
@@ -137,11 +173,20 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
         }
 
         transaction.Commit();
+        _logger.LogInformation("SubmitCompanyAsync completed successfully");
+
         return companyId;
     }
-    catch
+    catch (Exception ex)
     {
         transaction.Rollback();
+
+        _logger.LogError(
+            ex,
+            "SubmitCompanyAsync failed. ProjectExecuted = {ProjectExecuted}",
+            request.ProjectExecuted
+        );
+
         throw;
     }
 }
