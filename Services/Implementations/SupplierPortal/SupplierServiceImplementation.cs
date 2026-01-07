@@ -186,7 +186,7 @@ namespace DynamicFormService.DynamicFormServiceImplementation
             Guid companyId,
             string filter)
         {
-            var data = await _supplierRepoInterface.GetByStageAsync(
+            var data = await _supplierRepoInterface.GetByStageAsyncBySupplier(
                 companyId,
                 ApprovalStage.Supplier,
                 ParseFilter(filter)
