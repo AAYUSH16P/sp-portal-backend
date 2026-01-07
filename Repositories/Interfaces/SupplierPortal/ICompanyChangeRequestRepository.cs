@@ -4,6 +4,7 @@ namespace DynamicFormRepo.DynamicFormRepoInterface;
 
 public interface ICompanyChangeRequestRepository
 {
+    Task DeleteResetTokenAsync(string token);
     Task CreateAsync(CompanyChangeRequestDto dto);
     Task<List<CompanyChangeRequestViewDto>> GetPendingAsync();
     Task ApproveAsync(Guid requestId, Guid adminId);

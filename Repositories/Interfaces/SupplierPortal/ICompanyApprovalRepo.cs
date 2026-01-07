@@ -6,6 +6,7 @@ namespace DynamicFormRepo.DynamicFormRepoInterface;
 
 public interface ICompanyApprovalRepo
 {
+    Task<CompanyLoginDataDto?> GetLoginDataByCompanyIdAsync(Guid companyId);
     Task ApproveCompanyAsync(Guid companyId, string passwordHash);
     Task RejectCompanyAsync(Guid companyId, string remark);
     Task<CompanyLoginDataDto?> GetLoginDataAsync(string email);

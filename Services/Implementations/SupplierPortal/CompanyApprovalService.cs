@@ -125,37 +125,18 @@ public class CompanyApprovalService : ICompanyApprovalService
     
     public async Task<LoginResponseDto> LoginAsync(CompanyLoginDto dto)
     {
-        _logger.LogInformation("🔐 Login attempt started for Email: {Email}", dto.Email);
+        var companyId = await _repo.GetLoginDataAsync(dto.Email);
 
-        var data = await _repo.GetLoginDataAsync(dto.Email);
+        if (companyId == null)
+            throw new UnauthorizedAccessException("Invalid credentials");
+
+        var data = await _repo.GetLoginDataByCompanyIdAsync(companyId.CompanyId);
 
         if (data == null)
-        {
-            _logger.LogWarning("❌ Login failed: No user found for Email: {Email}", dto.Email);
             throw new UnauthorizedAccessException("Invalid credentials");
-        }
 
-        _logger.LogInformation(
-            "✅ User found. CompanyId: {CompanyId}, IsSlaSigned: {IsSlaSigned}",
-            data.CompanyId,
-            data.IsSlaSigned
-        );
-
-        if (!PasswordHasher.Verify(dto.Password, data.PasswordHash))
-        {
-            _logger.LogWarning(
-                "❌ Login failed: Password mismatch for Email: {Email}, CompanyId: {CompanyId}",
-                dto.Email,
-                data.CompanyId
-            );
-
+        if (!PasswordHasher.Verify(dto.Password.Trim(), data.PasswordHash))
             throw new UnauthorizedAccessException("Invalid credentials");
-        }
-
-        _logger.LogInformation(
-            "🔑 Password verified successfully for CompanyId: {CompanyId}",
-            data.CompanyId
-        );
 
         var token = _jwtGenerator.Generate(
             data.CompanyId,
@@ -166,12 +147,6 @@ public class CompanyApprovalService : ICompanyApprovalService
             data.IsAcknowledged,
             data.NextMeetingAt,
             out var expiresAt
-        );
-
-        _logger.LogInformation(
-            "🎟️ JWT generated successfully for CompanyId: {CompanyId}, ExpiresAt: {ExpiresAt}",
-            data.CompanyId,
-            expiresAt
         );
 
         return new LoginResponseDto

@@ -360,6 +360,16 @@ private async Task ReplaceCertifications(
         WHERE id = @CompanyId
     ", new { Hash = passwordHash, CompanyId = companyId });
     }
+    
+    public Task DeleteResetTokenAsync(string token)
+    {
+        using var conn = CreateConnection();
+        return conn.ExecuteAsync(
+            "DELETE FROM password_reset_tokens WHERE token = @Token",
+            new { Token = token }
+        );
+    }
+
 
     
     

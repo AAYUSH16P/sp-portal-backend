@@ -84,6 +84,25 @@ public class CompanyApprovalRepo : ICompanyApprovalRepo
         );
     }
 
+    
+    public async Task<CompanyLoginDataDto?> GetLoginDataByCompanyIdAsync(Guid companyId)
+    {
+        using var conn = CreateConnection();
+
+        return await conn.QuerySingleOrDefaultAsync<CompanyLoginDataDto>(@"
+        SELECT
+            id                      AS CompanyId,
+            company_name            AS CompanyName,
+            password_hash           AS PasswordHash,
+            is_sla_signed           AS IsSlaSigned,
+            is_password_changed     AS IsPasswordChanged,
+            is_acknowledged         AS IsAcknowledged,
+            next_meeting_at         AS NextMeetingAt
+        FROM companies
+        WHERE id = @CompanyId
+    ", new { CompanyId = companyId });
+    }
+
 
     
     
