@@ -8,7 +8,7 @@ public static class ExcelTemplateValidator
         "workingsince",
         "ctc",
         "jobtitle",
-        "role",
+        "I Can be",
         "gender",
         "location",
         "totalexperience",
