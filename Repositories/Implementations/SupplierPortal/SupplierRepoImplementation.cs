@@ -408,84 +408,82 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
                 });
             }
 
-        public async Task<IEnumerable<SupplierCapacity>> GetByStageAsync(
+       public async Task<IEnumerable<SupplierCapacity>> GetByStageAsync(
             Guid companyId,
             ApprovalStage stage,
             SupplierStatus? status)
-        {
-            using var conn = CreateConnection();
+            {
+                using var conn = CreateConnection();
 
-            var sql = @"
-                  SELECT 
-                    sc.id                    AS ""Id"",
-                    sc.companyid             AS ""CompanyId"",
-                    sc.companyemployeeid     AS ""CompanyEmployeeId"",
-                    sc.isrefered             AS ""IsRefered"",
-                    sc.workingsince          AS ""WorkingSince"",
-                    sc.ctc                   AS ""CTC"",
-                    sc.jobtitle              AS ""JobTitle"",
-                    sc.role                  AS ""Role"",
-                    sc.gender                AS ""Gender"",
-                    sc.location              AS ""Location"",
-                    sc.totalexperience       AS ""TotalExperience"",
-                    sc.technicalskills       AS ""TechnicalSkills"",
-                    sc.tools                 AS ""Tools"",
-                    sc.numberofprojects      AS ""NumberOfProjects"",
-                    sc.status                AS ""Status"",
-                    sc.approval_stage        AS ""ApprovalStage"",
-                    sc.employernote          AS ""EmployerNote"",
+                var sql = @"
+                    SELECT 
+                        sc.id                    AS ""Id"",
+                        sc.companyid             AS ""CompanyId"",
+                        sc.companyemployeeid     AS ""CompanyEmployeeId"",
+                        sc.isrefered             AS ""IsRefered"",
+                        sc.workingsince          AS ""WorkingSince"",
+                        sc.ctc                   AS ""CTC"",
+                        sc.jobtitle              AS ""JobTitle"",
+                        sc.role                  AS ""Role"",
+                        sc.gender                AS ""Gender"",
+                        sc.location              AS ""Location"",
+                        sc.totalexperience       AS ""TotalExperience"",
+                        sc.technicalskills       AS ""TechnicalSkills"",
+                        sc.tools                 AS ""Tools"",
+                        sc.numberofprojects      AS ""NumberOfProjects"",
+                        sc.status                AS ""Status"",
+                        sc.approval_stage        AS ""ApprovalStage"",
+                        sc.employernote          AS ""EmployerNote"",
+                        sc.createdat             AS ""CreatedAt"",
 
-                    c.id                     AS ""CompanyId_FromJoin"",
-                    c.company_name           AS ""CompanyName"",
+                        c.company_name           AS ""CompanyName"",
 
-                    cert.id                  AS cert_id,
-                    cert.certificationname   AS ""CertificationName""
-                FROM suppliercapacity sc
-                INNER JOIN companies c
-                    ON c.id = sc.companyid
-                LEFT JOIN suppliercertifications cert
-                    ON sc.id = cert.suppliercapacityid
-                WHERE sc.companyid = @CompanyId
-                  AND sc.approval_stage = @Stage
-                  AND (
-                        @Status IS NULL
-                        OR sc.status = @Status::supplier_status
-                      );
-                    ";
+                        cert.id                  AS cert_id,
+                        cert.certificationname   AS ""CertificationName""
+                    FROM suppliercapacity sc
+                    INNER JOIN companies c
+                        ON c.id = sc.companyid
+                    LEFT JOIN suppliercertifications cert
+                        ON sc.id = cert.suppliercapacityid
+                    WHERE sc.companyid = @CompanyId
+                      AND sc.approval_stage = @Stage
+                      AND (
+                            @Status IS NULL
+                            OR sc.status = @Status::supplier_status
+                          )
+                    ORDER BY sc.createdat DESC;
+                ";
 
-            var dict = new Dictionary<Guid, SupplierCapacity>();
+                var dict = new Dictionary<Guid, SupplierCapacity>();
 
-            await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
-                sql,
-                (sc, cert) =>
-                {
-                    if (!dict.TryGetValue(sc.Id, out var capacity))
+                await conn.QueryAsync<SupplierCapacity, SupplierCertification, SupplierCapacity>(
+                    sql,
+                    (sc, cert) =>
                     {
-                        capacity = sc;
-                        capacity.Certifications = new List<SupplierCertification>();
+                        if (!dict.TryGetValue(sc.Id, out var capacity))
+                        {
+                            capacity = sc;
+                            capacity.Certifications = new List<SupplierCertification>();
+                            dict.Add(sc.Id, capacity);
+                        }
 
-                        capacity.CompanyId = sc.CompanyId;
-                        capacity.CompanyName = sc.CompanyName;
+                        if (cert != null)
+                            capacity.Certifications.Add(cert);
 
-                        dict.Add(sc.Id, capacity);
-                    }
+                        return capacity;
+                    },
+                    new
+                    {
+                        CompanyId = companyId,
+                        Stage = stage.ToString(),
+                        Status = status?.ToString()
+                    },
+                    splitOn: "cert_id"
+                );
 
-                    if (cert != null)
-                        capacity.Certifications.Add(cert);
+                return dict.Values;
+            }
 
-                    return capacity;
-                },
-                new
-                {
-                    CompanyId = companyId,
-                    Stage = stage.ToString(),
-                    Status = status?.ToString()
-                },
-                splitOn: "cert_id"
-            );
-            
-            return dict.Values;
-        }
         
         
         

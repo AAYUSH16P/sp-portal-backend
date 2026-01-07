@@ -291,7 +291,7 @@ namespace DynamicFormService.DynamicFormServiceImplementation
             Id = x.Id,
             CompanyEmployeeId = x.CompanyEmployeeId,
 
-            // ✅ Company details (FIXED)
+            // ✅ Company details
             CompanyId = x.CompanyId,
             CompanyName = x.CompanyName,
 
@@ -314,17 +314,18 @@ namespace DynamicFormService.DynamicFormServiceImplementation
             ApprovalStage = x.ApprovalStage,
             EmployerNote = x.EmployerNote,
 
-            // ✅ Certifications (safe mapping)
+            // ✅ THIS WAS MISSING
+            CreatedAt = x.CreatedAt,
+
+            // ✅ Certifications
             Certifications = x.Certifications?
                                  .Where(c => c != null && !string.IsNullOrWhiteSpace(c.CertificationName))
                                  .Select(c => c.CertificationName)
-                                 .ToList() 
+                                 .ToList()
                              ?? new List<string>()
         });
     }
 
-        
-        
        
         private void ValidateRow(SupplierResourceDto dto)
         {

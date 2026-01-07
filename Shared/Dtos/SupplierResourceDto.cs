@@ -19,6 +19,7 @@ public class SupplierResourceDto
     public string Gender { get; set; }
     public string Location { get; set; }
     public decimal TotalExperience { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     public string TechnicalSkills { get; set; }
     public string Tools { get; set; }
