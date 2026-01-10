@@ -1121,7 +1121,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             ON cc.company_id = c.id
 
         WHERE sc.admin_decision = true
-          AND sc.approval_stage = 'SUPPLIER'
+          AND sc.approval_stage = 'Supplier'
           AND sc.status = 'Approved'
 
         GROUP BY
@@ -1177,7 +1177,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             ON cc.company_id = c.id
 
         WHERE sc.admin_decision = true
-          AND sc.approval_stage = 'SUPPLIER'
+          AND sc.approval_stage = 'Supplier'
           AND sc.status = 'Rejected'
 
         GROUP BY
