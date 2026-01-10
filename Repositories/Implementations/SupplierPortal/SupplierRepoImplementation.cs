@@ -27,169 +27,193 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
             return new NpgsqlConnection(_connectionString);
         }
         
-    public async Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request)
-{
-    _logger.LogInformation("SubmitCompanyAsync started");
-
-    // 🔍 CRITICAL LOG: incoming value
-    _logger.LogInformation(
-        "Incoming Total Projects Executed (ProjectExecuted) = {ProjectExecuted}",
-        request.ProjectExecuted
-    );
-
-    using var conn = CreateConnection();
-    await ((NpgsqlConnection)conn).OpenAsync();
-    using var transaction = conn.BeginTransaction();
-
-    try
-    {
-        // 🔍 Log before insert
-        var totalProjectsExecuted = request.ProjectExecuted;
-        _logger.LogInformation(
-            "Value being sent to DB for total_projects_executed = {TotalProjectsExecuted}",
-            totalProjectsExecuted
-        );
-
-        // 1️⃣ Insert Company
-        var companyId = await conn.ExecuteScalarAsync<Guid>(@"
-            INSERT INTO companies
-            (
-                company_name,
-                company_website,
-                business_type,
-                company_size,
-                year_established,
-                company_overview,
-                total_projects_executed,
-                domain_expertise,
-                isapproved,
-                is_sla_signed
-            )
-            VALUES
-            (
-                @CompanyName,
-                @CompanyWebsite,
-                @BusinessType,
-                @CompanySize,
-                @YearEstablished,
-                @CompanyOverview,
-                @TotalProjectsExecuted,
-                @DomainExpertise,
-                FALSE,
-                FALSE
-            )
-            RETURNING id;
-        ", new
+        public async Task<Guid> SubmitCompanyAsync(CompanyRegistrationRequestDto request)
         {
-            request.CompanyName,
-            request.CompanyWebsite,
-            request.BusinessType,
-            request.CompanySize,
-            request.YearEstablished,
-            request.CompanyOverview,
-            TotalProjectsExecuted = totalProjectsExecuted, // 👈 explicit variable
-            request.DomainExpertise
-        }, transaction);
+            _logger.LogInformation("SubmitCompanyAsync started");
 
-        _logger.LogInformation(
-            "Company inserted successfully. CompanyId = {CompanyId}",
-            companyId
-        );
+            _logger.LogInformation(
+                "Incoming Total Projects Executed (ProjectExecuted) = {ProjectExecuted}",
+                request.ProjectExecuted
+            );
 
-        // 🔍 OPTIONAL: verify immediately from DB
-        var dbValue = await conn.ExecuteScalarAsync<int?>(
-            "SELECT total_projects_executed FROM companies WHERE id = @CompanyId",
-            new { CompanyId = companyId },
-            transaction
-        );
-
-        _logger.LogInformation(
-            "DB value after insert for total_projects_executed = {DbValue}",
-            dbValue
-        );
-
-        // 2️⃣ Insert Address
-        await conn.ExecuteAsync(@"
-            INSERT INTO company_addresses
-            (company_id, address_line1, address_line2, city, state, postal_code, country)
-            VALUES
-            (@CompanyId, @AddressLine1, @AddressLine2, @City, @State, @PostalCode, @Country);
-        ", new
-        {
-            CompanyId = companyId,
-            request.AddressLine1,
-            request.AddressLine2,
-            request.City,
-            request.State,
-            request.PostalCode,
-            request.Country
-        }, transaction);
-
-        // 3️⃣ Insert PRIMARY Contact
-        await conn.ExecuteAsync(@"
-            INSERT INTO company_contacts
-            (company_id, contact_type, contact_name, role_designation, email, phone)
-            VALUES
-            (@CompanyId, 'PRIMARY', @Name, @Role, @Email, @Phone);
-        ", new
-        {
-            CompanyId = companyId,
-            Name = request.PrimaryContactName,
-            Role = request.PrimaryContactRole,
-            Email = request.PrimaryContactEmail,
-            Phone = request.PrimaryContactPhone
-        }, transaction);
-
-        // 4️⃣ Insert SECONDARY Contact
-        if (!string.IsNullOrWhiteSpace(request.SecondaryContactName))
-        {
-            await conn.ExecuteAsync(@"
-                INSERT INTO company_contacts
-                (company_id, contact_type, contact_name, role_designation, email, phone)
-                VALUES
-                (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
-            ", new
+            using var conn = CreateConnection();
+            await ((NpgsqlConnection)conn).OpenAsync();
+            using var transaction = conn.BeginTransaction();
+            
+            try
             {
-                CompanyId = companyId,
-                Name = request.SecondaryContactName,
-                Role = request.SecondaryContactRole,
-                Email = request.SecondaryContactEmail,
-                Phone = request.SecondaryContactPhone
-            }, transaction);
-        }
+                
+                var existingCompanyId = await conn.ExecuteScalarAsync<Guid?>(
+                    @"
+                    SELECT cc.company_id
+                    FROM company_contacts cc
+                    WHERE cc.email = @PrimaryEmail
+                      AND cc.contact_type = 'PRIMARY'
+                    LIMIT 1;
+                    ",
+                    new { PrimaryEmail = request.PrimaryContactEmail },
+                    transaction
+                );
 
-        // 5️⃣ Insert Certifications
-        foreach (var cert in request.Certifications ?? Enumerable.Empty<string>())
-        {
-            await conn.ExecuteAsync(@"
-                INSERT INTO company_certifications
-                (company_id, certification_name)
-                VALUES (@CompanyId, @Certification);
-            ", new
+                if (existingCompanyId.HasValue)
+                {
+                    _logger.LogWarning(
+                        "Duplicate registration attempt blocked. PrimaryEmail = {Email}, ExistingCompanyId = {CompanyId}",
+                        request.PrimaryContactEmail,
+                        existingCompanyId.Value
+                    );
+
+                    throw new InvalidOperationException(
+                        "A company is already registered with this primary email address."
+                    );
+                }
+                
+                var totalProjectsExecuted = request.ProjectExecuted;
+                _logger.LogInformation(
+                    "Value being sent to DB for total_projects_executed = {TotalProjectsExecuted}",
+                    totalProjectsExecuted
+                );
+
+                // 1️⃣ Insert Company
+                var companyId = await conn.ExecuteScalarAsync<Guid>(@"
+                    INSERT INTO companies
+                    (
+                        company_name,
+                        company_website,
+                        business_type,
+                        company_size,
+                        year_established,
+                        company_overview,
+                        total_projects_executed,
+                        domain_expertise,
+                        isapproved,
+                        is_sla_signed
+                    )
+                    VALUES
+                    (
+                        @CompanyName,
+                        @CompanyWebsite,
+                        @BusinessType,
+                        @CompanySize,
+                        @YearEstablished,
+                        @CompanyOverview,
+                        @TotalProjectsExecuted,
+                        @DomainExpertise,
+                        FALSE,
+                        FALSE
+                    )
+                    RETURNING id;
+                ", new
+                {
+                    request.CompanyName,
+                    request.CompanyWebsite,
+                    request.BusinessType,
+                    request.CompanySize,
+                    request.YearEstablished,
+                    request.CompanyOverview,
+                    TotalProjectsExecuted = totalProjectsExecuted, // 👈 explicit variable
+                    request.DomainExpertise
+                }, transaction);
+
+                _logger.LogInformation(
+                    "Company inserted successfully. CompanyId = {CompanyId}",
+                    companyId
+                );
+
+                // 🔍 OPTIONAL: verify immediately from DB
+                var dbValue = await conn.ExecuteScalarAsync<int?>(
+                    "SELECT total_projects_executed FROM companies WHERE id = @CompanyId",
+                    new { CompanyId = companyId },
+                    transaction
+                );
+
+                _logger.LogInformation(
+                    "DB value after insert for total_projects_executed = {DbValue}",
+                    dbValue
+                );
+
+                // 2️⃣ Insert Address
+                await conn.ExecuteAsync(@"
+                    INSERT INTO company_addresses
+                    (company_id, address_line1, address_line2, city, state, postal_code, country)
+                    VALUES
+                    (@CompanyId, @AddressLine1, @AddressLine2, @City, @State, @PostalCode, @Country);
+                ", new
+                {
+                    CompanyId = companyId,
+                    request.AddressLine1,
+                    request.AddressLine2,
+                    request.City,
+                    request.State,
+                    request.PostalCode,
+                    request.Country
+                }, transaction);
+
+                // 3️⃣ Insert PRIMARY Contact
+                await conn.ExecuteAsync(@"
+                    INSERT INTO company_contacts
+                    (company_id, contact_type, contact_name, role_designation, email, phone)
+                    VALUES
+                    (@CompanyId, 'PRIMARY', @Name, @Role, @Email, @Phone);
+                ", new
+                {
+                    CompanyId = companyId,
+                    Name = request.PrimaryContactName,
+                    Role = request.PrimaryContactRole,
+                    Email = request.PrimaryContactEmail,
+                    Phone = request.PrimaryContactPhone
+                }, transaction);
+
+                // 4️⃣ Insert SECONDARY Contact
+                if (!string.IsNullOrWhiteSpace(request.SecondaryContactName))
+                {
+                    await conn.ExecuteAsync(@"
+                        INSERT INTO company_contacts
+                        (company_id, contact_type, contact_name, role_designation, email, phone)
+                        VALUES
+                        (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
+                    ", new
+                    {
+                        CompanyId = companyId,
+                        Name = request.SecondaryContactName,
+                        Role = request.SecondaryContactRole,
+                        Email = request.SecondaryContactEmail,
+                        Phone = request.SecondaryContactPhone
+                    }, transaction);
+                }
+
+                // 5️⃣ Insert Certifications
+                foreach (var cert in request.Certifications ?? Enumerable.Empty<string>())
+                {
+                    await conn.ExecuteAsync(@"
+                        INSERT INTO company_certifications
+                        (company_id, certification_name)
+                        VALUES (@CompanyId, @Certification);
+                    ", new
+                    {
+                        CompanyId = companyId,
+                        Certification = cert
+                    }, transaction);
+                }
+
+                transaction.Commit();
+                _logger.LogInformation("SubmitCompanyAsync completed successfully");
+
+                return companyId;
+            }
+            catch (Exception ex)
             {
-                CompanyId = companyId,
-                Certification = cert
-            }, transaction);
+                transaction.Rollback();
+
+                _logger.LogError(
+                    ex,
+                    "SubmitCompanyAsync failed. ProjectExecuted = {ProjectExecuted}",
+                    request.ProjectExecuted
+                );
+
+                throw;
+            }
         }
-
-        transaction.Commit();
-        _logger.LogInformation("SubmitCompanyAsync completed successfully");
-
-        return companyId;
-    }
-    catch (Exception ex)
-    {
-        transaction.Rollback();
-
-        _logger.LogError(
-            ex,
-            "SubmitCompanyAsync failed. ProjectExecuted = {ProjectExecuted}",
-            request.ProjectExecuted
-        );
-
-        throw;
-    }
-}
 
         public async Task<long> CreateUploadAsync(
             Guid companyId,
