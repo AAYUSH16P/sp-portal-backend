@@ -108,5 +108,25 @@ public class CalendarRepo : ICalendarRepo
             endUtc
         })).ToList();
     }
+    
+    
+    public async Task UpdateNextMeetingAsync(Guid companyId, DateTime meetingUtc)
+    {
+        using var conn = CreateConnection();
+
+        var sql = @"
+        UPDATE companies
+        SET next_meeting_at = @MeetingUtc,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = @CompanyId;
+    ";
+
+        await conn.ExecuteAsync(sql, new
+        {
+            CompanyId = companyId,
+            MeetingUtc = meetingUtc
+        });
+    }
+
 
 }

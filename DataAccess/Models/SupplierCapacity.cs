@@ -27,6 +27,7 @@ public class SupplierCapacity
     public string Remark { get; set; }
 
     public DateTime CreatedAt { get; set; }
+    public bool? AdminDecision { get; set; }
 
     public List<SupplierCertification> Certifications { get; set; }
 }

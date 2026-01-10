@@ -4,6 +4,8 @@ namespace DynamicFormRepo.DynamicFormRepoInterface;
 
 public interface ICalendarRepo
 {
+    Task UpdateNextMeetingAsync(Guid companyId, DateTime meetingUtc);
+
     Task ReplaceAdminEventsAsync(
         string adminEmail,
         List<AdminCalendarEventDto> events);

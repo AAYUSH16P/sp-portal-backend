@@ -225,22 +225,27 @@ namespace DynamicFormService.DynamicFormServiceImplementation
         await _supplierRepoInterface.UpdateAsync(c);
     }
 
-    public async Task SupplierApproveAsync(Guid id)
+    public async Task SupplierApproveAsync(Guid id,bool? isRequestAdmin)
     {
         var c = await _supplierRepoInterface.GetByIdAsync(id);
 
         c.Status = SupplierStatus.Approved;
 
         c.ApprovalStage = ApprovalStage.Completed;
+        if (isRequestAdmin.HasValue)
+        {
+            c.AdminDecision = isRequestAdmin; 
+        }
         await _supplierRepoInterface.UpdateAsync(c);
     }
 
-    public async Task SupplierRejectAsync(Guid id, string remark)
+    public async Task SupplierRejectAsync(Guid id, string remark, bool? isRequestAdmin)
     {
         var c = await _supplierRepoInterface.GetByIdAsync(id);
         c.Status = SupplierStatus.Rejected;
         c.ApprovalStage = ApprovalStage.Supplier;
         c.Remark = remark;
+        c.AdminDecision = isRequestAdmin;
         await _supplierRepoInterface.UpdateAsync(c);
     }
     
@@ -381,5 +386,16 @@ namespace DynamicFormService.DynamicFormServiceImplementation
         
         public Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
             => _supplierRepoInterface.GetEligibleSuppliersAsync();
+        
+        public async Task<IEnumerable<SupplierCapacity>> GetAdminApprovedAsync()
+        {
+            return await _supplierRepoInterface.GetApprovedByAdminAsync();
+        }
+
+        public async Task<IEnumerable<SupplierCapacity>> GetAdminRejectedAsync()
+        {
+            return await _supplierRepoInterface.GetRejectedByAdminAsync();
+        }
+
     }
 }

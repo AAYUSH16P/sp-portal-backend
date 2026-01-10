@@ -699,25 +699,22 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
             using var conn = CreateConnection();
 
             var sql = @"
-        UPDATE suppliercapacity SET
-            status = @Status::supplier_status,
-            approval_stage = @ApprovalStage,
-            remark = @Remark
-        WHERE id = @Id;
-    ";
+                UPDATE suppliercapacity SET
+                    status = @Status::supplier_status,
+                    approval_stage = @ApprovalStage,
+                    remark = @Remark
+                WHERE id = @Id;
+            ";
 
             await conn.ExecuteAsync(sql, new
             {
                 Status = capacity.Status.ToString(),
                 ApprovalStage = capacity.ApprovalStage.ToString(),
                 capacity.Remark,
+                capacity.AdminDecision,
                 capacity.Id
             });
         }
-        
-        
-        
-        
         
         
     public async Task UpdateAsyncReferEmployee(SupplierCapacity entity)
@@ -819,246 +816,279 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
 
 
 
-   public async Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto)
-{
-    using var conn = CreateConnection();
-    await ((NpgsqlConnection)conn).OpenAsync();
-    using var tx = conn.BeginTransaction();
-
-    try
-    {
-        /* 1️⃣ Update Company */
-        await conn.ExecuteAsync(@"
-            UPDATE companies
-            SET
-                company_name = @CompanyName,
-                company_website = @CompanyWebsite,
-                business_type = @BusinessType,
-                company_size = @CompanySize,
-                year_established = @YearEstablished,
-                company_overview = @CompanyOverview,
-                total_projects_executed = @TotalProjectsExecuted,
-                domain_expertise = @DomainExpertise,
-                updated_at = NOW()
-            WHERE id = @CompanyId;
-        ", new
+           public async Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto)
         {
-            CompanyId = companyId,
-            dto.CompanyName,
-            dto.CompanyWebsite,
-            dto.BusinessType,
-            dto.CompanySize,
-            dto.YearEstablished,
-            dto.CompanyOverview,
-            dto.TotalProjectsExecuted,
-            dto.DomainExpertise
-        }, tx);
+            using var conn = CreateConnection();
+            await ((NpgsqlConnection)conn).OpenAsync();
+            using var tx = conn.BeginTransaction();
 
-        /* 2️⃣ Update Address */
-        await conn.ExecuteAsync(@"
-            UPDATE company_addresses
-            SET
-                address_line1 = @AddressLine1,
-                address_line2 = @AddressLine2,
-                city = @City,
-                state = @State,
-                postal_code = @PostalCode,
-                country = @Country
-            WHERE company_id = @CompanyId;
-        ", new
-        {
-            CompanyId = companyId,
-            dto.Address.AddressLine1,
-            dto.Address.AddressLine2,
-            dto.Address.City,
-            dto.Address.State,
-            dto.Address.PostalCode,
-            dto.Address.Country
-        }, tx);
-
-        /* 3️⃣ Update PRIMARY contact */
-        await conn.ExecuteAsync(@"
-            UPDATE company_contacts
-            SET
-                contact_name = @ContactName,
-                role_designation = @Role,
-                email = @Email,
-                phone = @Phone
-            WHERE company_id = @CompanyId AND contact_type = 'PRIMARY';
-        ", new
-        {
-            CompanyId = companyId,
-            ContactName = dto.PrimaryContact.ContactName,
-            Role = dto.PrimaryContact.RoleDesignation,
-            Email = dto.PrimaryContact.Email,
-            Phone = dto.PrimaryContact.Phone
-        }, tx);
-
-        /* 4️⃣ Replace SECONDARY contact */
-        await conn.ExecuteAsync(
-            @"DELETE FROM company_contacts 
-              WHERE company_id = @CompanyId AND contact_type = 'SECONDARY';",
-            new { CompanyId = companyId }, tx);
-
-        if (dto.SecondaryContact != null)
-        {
-            await conn.ExecuteAsync(@"
-                INSERT INTO company_contacts
-                (company_id, contact_type, contact_name, role_designation, email, phone)
-                VALUES
-                (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
-            ", new
+            try
             {
-                CompanyId = companyId,
-                Name = dto.SecondaryContact.ContactName,
-                Role = dto.SecondaryContact.RoleDesignation,
-                Email = dto.SecondaryContact.Email,
-                Phone = dto.SecondaryContact.Phone
-            }, tx);
-        }
+                /* 1️⃣ Update Company */
+                await conn.ExecuteAsync(@"
+                    UPDATE companies
+                    SET
+                        company_name = @CompanyName,
+                        company_website = @CompanyWebsite,
+                        business_type = @BusinessType,
+                        company_size = @CompanySize,
+                        year_established = @YearEstablished,
+                        company_overview = @CompanyOverview,
+                        total_projects_executed = @TotalProjectsExecuted,
+                        domain_expertise = @DomainExpertise,
+                        updated_at = NOW()
+                    WHERE id = @CompanyId;
+                ", new
+                {
+                    CompanyId = companyId,
+                    dto.CompanyName,
+                    dto.CompanyWebsite,
+                    dto.BusinessType,
+                    dto.CompanySize,
+                    dto.YearEstablished,
+                    dto.CompanyOverview,
+                    dto.TotalProjectsExecuted,
+                    dto.DomainExpertise
+                }, tx);
 
-        /* 5️⃣ Replace Certifications */
-        await conn.ExecuteAsync(
-            "DELETE FROM company_certifications WHERE company_id = @CompanyId;",
-            new { CompanyId = companyId }, tx);
+                /* 2️⃣ Update Address */
+                await conn.ExecuteAsync(@"
+                    UPDATE company_addresses
+                    SET
+                        address_line1 = @AddressLine1,
+                        address_line2 = @AddressLine2,
+                        city = @City,
+                        state = @State,
+                        postal_code = @PostalCode,
+                        country = @Country
+                    WHERE company_id = @CompanyId;
+                ", new
+                {
+                    CompanyId = companyId,
+                    dto.Address.AddressLine1,
+                    dto.Address.AddressLine2,
+                    dto.Address.City,
+                    dto.Address.State,
+                    dto.Address.PostalCode,
+                    dto.Address.Country
+                }, tx);
 
-        foreach (var cert in dto.Certifications)
-        {
-            await conn.ExecuteAsync(@"
-                INSERT INTO company_certifications
-                (company_id, certification_name)
-                VALUES (@CompanyId, @Certification);
-            ", new
+                /* 3️⃣ Update PRIMARY contact */
+                await conn.ExecuteAsync(@"
+                    UPDATE company_contacts
+                    SET
+                        contact_name = @ContactName,
+                        role_designation = @Role,
+                        email = @Email,
+                        phone = @Phone
+                    WHERE company_id = @CompanyId AND contact_type = 'PRIMARY';
+                ", new
+                {
+                    CompanyId = companyId,
+                    ContactName = dto.PrimaryContact.ContactName,
+                    Role = dto.PrimaryContact.RoleDesignation,
+                    Email = dto.PrimaryContact.Email,
+                    Phone = dto.PrimaryContact.Phone
+                }, tx);
+
+                /* 4️⃣ Replace SECONDARY contact */
+                await conn.ExecuteAsync(
+                    @"DELETE FROM company_contacts 
+                      WHERE company_id = @CompanyId AND contact_type = 'SECONDARY';",
+                    new { CompanyId = companyId }, tx);
+
+                if (dto.SecondaryContact != null)
+                {
+                    await conn.ExecuteAsync(@"
+                        INSERT INTO company_contacts
+                        (company_id, contact_type, contact_name, role_designation, email, phone)
+                        VALUES
+                        (@CompanyId, 'SECONDARY', @Name, @Role, @Email, @Phone);
+                    ", new
+                    {
+                        CompanyId = companyId,
+                        Name = dto.SecondaryContact.ContactName,
+                        Role = dto.SecondaryContact.RoleDesignation,
+                        Email = dto.SecondaryContact.Email,
+                        Phone = dto.SecondaryContact.Phone
+                    }, tx);
+                }
+
+                /* 5️⃣ Replace Certifications */
+                await conn.ExecuteAsync(
+                    "DELETE FROM company_certifications WHERE company_id = @CompanyId;",
+                    new { CompanyId = companyId }, tx);
+
+                foreach (var cert in dto.Certifications)
+                {
+                    await conn.ExecuteAsync(@"
+                        INSERT INTO company_certifications
+                        (company_id, certification_name)
+                        VALUES (@CompanyId, @Certification);
+                    ", new
+                    {
+                        CompanyId = companyId,
+                        Certification = cert
+                    }, tx);
+                }
+
+                tx.Commit();
+            }
+            catch
             {
-                CompanyId = companyId,
-                Certification = cert
-            }, tx);
+                tx.Rollback();
+                throw;
+            }
         }
-
-        tx.Commit();
-    }
-    catch
-    {
-        tx.Rollback();
-        throw;
-    }
-}
    
    
    
 
 
-  public async Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
-{
-    const string sql = @"
-    SELECT
-        sc.id,
-        sc.companyemployeeid,
-        sc.companyid,
-        c.company_name        AS companyname,   -- ✅ added
-        sc.isrefered,
-        sc.workingsince,
-        sc.ctc,
-        sc.jobtitle,
-        sc.role,
-        sc.gender,
-        sc.location,
-        sc.totalexperience,
-        sc.technicalskills,
-        sc.tools,
-        sc.numberofprojects,
-        sc.status,
-        sc.approval_stage,
-        sc.employernote,
-        COALESCE(
-            json_agg(
-                jsonb_build_object(
-                    'CertificationName', cert.certificationname
-                )
-            ) FILTER (WHERE cert.id IS NOT NULL),
-            '[]'
-        ) AS certifications
-    FROM public.suppliercapacity sc
-    LEFT JOIN public.companies c
-        ON c.id = sc.companyid                 -- ✅ join companies
-    LEFT JOIN public.suppliercertifications cert
-        ON cert.suppliercapacityid = sc.id
-    WHERE sc.approval_stage = 'Supplier'
-      AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
-    GROUP BY
-        sc.id,
-        c.company_name;                        -- ✅ required
-    ";
-
-    using var conn = CreateConnection();
-
-    IEnumerable<dynamic> rows = await conn.QueryAsync(sql);
-
-    List<SupplierResourceDto> result = new();
-
-    foreach (dynamic row in rows)
-    {
-        SupplierStatus? status = null;
-        ApprovalStage? stage = null;
-
-        SupplierStatus parsedStatus = default;
-        ApprovalStage parsedStage = default;
-
-        if (row.status != null &&
-            Enum.TryParse(row.status.ToString(), true, out parsedStatus))
+          public async Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
         {
-            status = parsedStatus;
+            const string sql = @"
+            SELECT
+                sc.id,
+                sc.companyemployeeid,
+                sc.companyid,
+                c.company_name        AS companyname,   -- ✅ added
+                sc.isrefered,
+                sc.workingsince,
+                sc.ctc,
+                sc.jobtitle,
+                sc.role,
+                sc.gender,
+                sc.location,
+                sc.totalexperience,
+                sc.technicalskills,
+                sc.tools,
+                sc.numberofprojects,
+                sc.status,
+                sc.approval_stage,
+                sc.employernote,
+                COALESCE(
+                    json_agg(
+                        jsonb_build_object(
+                            'CertificationName', cert.certificationname
+                        )
+                    ) FILTER (WHERE cert.id IS NOT NULL),
+                    '[]'
+                ) AS certifications
+            FROM public.suppliercapacity sc
+            LEFT JOIN public.companies c
+                ON c.id = sc.companyid                 -- ✅ join companies
+            LEFT JOIN public.suppliercertifications cert
+                ON cert.suppliercapacityid = sc.id
+            WHERE sc.approval_stage = 'Supplier'
+              AND AGE(CURRENT_DATE, sc.workingsince) >= INTERVAL '1 year'
+            GROUP BY
+                sc.id,
+                c.company_name;                        -- ✅ required
+            ";
+
+            using var conn = CreateConnection();
+
+            IEnumerable<dynamic> rows = await conn.QueryAsync(sql);
+
+            List<SupplierResourceDto> result = new();
+
+            foreach (dynamic row in rows)
+            {
+                SupplierStatus? status = null;
+                ApprovalStage? stage = null;
+
+                SupplierStatus parsedStatus = default;
+                ApprovalStage parsedStage = default;
+
+                if (row.status != null &&
+                    Enum.TryParse(row.status.ToString(), true, out parsedStatus))
+                {
+                    status = parsedStatus;
+                }
+
+                if (row.approval_stage != null &&
+                    Enum.TryParse(row.approval_stage.ToString(), true, out parsedStage))
+                {
+                    stage = parsedStage;
+                }
+
+                string certificationsJson = row.certifications != null
+                    ? row.certifications.ToString()
+                    : "[]";
+
+                List<string> certifications =
+                    Newtonsoft.Json.JsonConvert
+                        .DeserializeObject<List<CertificationTemp>>(certificationsJson)?
+                        .Select(c => c.CertificationName)
+                        .ToList()
+                    ?? new List<string>();
+
+                SupplierResourceDto dto = new SupplierResourceDto
+                {
+                    Id = (Guid)row.id,
+                    CompanyEmployeeId = (string)row.companyemployeeid,
+                    CompanyId = (Guid)row.companyid,
+                    CompanyName = row.companyname as string,   // ✅ mapped
+                    IsRefered = (bool)row.isrefered,
+
+                    WorkingSince = (DateOnly)row.workingsince,
+
+                    CTC = (decimal)row.ctc,
+                    JobTitle = (string)row.jobtitle,
+                    Role = (string)row.role,
+                    Gender = (string)row.gender,
+                    Location = (string)row.location,
+                    TotalExperience = (decimal)row.totalexperience,
+                    TechnicalSkills = (string)row.technicalskills,
+                    Tools = (string)row.tools,
+                    NumberOfProjects = (int)row.numberofprojects,
+                    EmployerNote = row.employernote as string,
+
+                    Status = status,
+                    ApprovalStage = stage,
+                    Certifications = certifications
+                };
+
+                result.Add(dto);
+            }
+
+            return result;
         }
 
-        if (row.approval_stage != null &&
-            Enum.TryParse(row.approval_stage.ToString(), true, out parsedStage))
+        public async Task<IEnumerable<SupplierCapacity>> GetApprovedByAdminAsync()
         {
-            stage = parsedStage;
+            using var conn = CreateConnection();
+
+            var sql = @"
+                SELECT *
+                FROM suppliercapacity
+                WHERE admin_decision = true
+                ORDER BY createdat DESC;
+            ";
+
+            return await conn.QueryAsync<SupplierCapacity>(sql);
         }
 
-        string certificationsJson = row.certifications != null
-            ? row.certifications.ToString()
-            : "[]";
-
-        List<string> certifications =
-            Newtonsoft.Json.JsonConvert
-                .DeserializeObject<List<CertificationTemp>>(certificationsJson)?
-                .Select(c => c.CertificationName)
-                .ToList()
-            ?? new List<string>();
-
-        SupplierResourceDto dto = new SupplierResourceDto
+        public async Task<IEnumerable<SupplierCapacity>> GetRejectedByAdminAsync()
         {
-            Id = (Guid)row.id,
-            CompanyEmployeeId = (string)row.companyemployeeid,
-            CompanyId = (Guid)row.companyid,
-            CompanyName = row.companyname as string,   // ✅ mapped
-            IsRefered = (bool)row.isrefered,
+            using var conn = CreateConnection();
 
-            WorkingSince = (DateOnly)row.workingsince,
+            var sql = @"
+                SELECT *
+                FROM suppliercapacity
+                WHERE admin_decision = false
+                ORDER BY createdat DESC;
+            ";
 
-            CTC = (decimal)row.ctc,
-            JobTitle = (string)row.jobtitle,
-            Role = (string)row.role,
-            Gender = (string)row.gender,
-            Location = (string)row.location,
-            TotalExperience = (decimal)row.totalexperience,
-            TechnicalSkills = (string)row.technicalskills,
-            Tools = (string)row.tools,
-            NumberOfProjects = (int)row.numberofprojects,
-            EmployerNote = row.employernote as string,
+            return await conn.QueryAsync<SupplierCapacity>(sql);
+        }
 
-            Status = status,
-            ApprovalStage = stage,
-            Certifications = certifications
-        };
-
-        result.Add(dto);
-    }
-
-    return result;
-}
-
+  
+    
+  
+  
+  
 private class CertificationTemp
 {
     public string CertificationName { get; set; }

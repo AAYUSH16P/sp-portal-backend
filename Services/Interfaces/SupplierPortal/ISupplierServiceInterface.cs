@@ -1,4 +1,5 @@
 ﻿
+using FinancialManagementDataAccess.Models;
 using Shared;
 
 namespace DynamicFormService.DynamicFormServiceInterface
@@ -37,12 +38,15 @@ namespace DynamicFormService.DynamicFormServiceInterface
         Task HrApproveAsync(Guid id);
         Task HrRejectAsync(Guid id, string remark);
 
-        Task SupplierApproveAsync(Guid id);
-        Task SupplierRejectAsync(Guid id, string remark);
+        Task SupplierApproveAsync(Guid id,bool? isRequestAdmin);
+        Task SupplierRejectAsync(Guid id, string remark, bool? isRequestAdmin);
 
         Task<IEnumerable<SupplierResourceDto>> GetAllSupplierCapacitiesAsync(string filter);
         
         Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto);
+        
+        Task<IEnumerable<SupplierCapacity>> GetAdminApprovedAsync();
+        Task<IEnumerable<SupplierCapacity>> GetAdminRejectedAsync();
 
     }
 }

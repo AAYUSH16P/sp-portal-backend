@@ -46,6 +46,8 @@ namespace DynamicFormRepo.DynamicFormRepoInterface
             ApprovalStage stage,
             SupplierStatus? status);
         Task UpdateCompanyAsync(Guid companyId, UpdateCompanyRequestDto dto);
+        Task<IEnumerable<SupplierCapacity>> GetApprovedByAdminAsync();
+        Task<IEnumerable<SupplierCapacity>> GetRejectedByAdminAsync();
 
     }
 }

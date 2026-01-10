@@ -95,33 +95,9 @@ public class CalendarService : ICalendarService
         var created = await _client.Users[hostEmail].Events.PostAsync(ev);
 
         var joinUrl = created!.OnlineMeeting?.JoinUrl!;
-
-        //
-        // await _emailService.SendAsync(new SendEmailRequestDto
-        // {
-        //     To = hostEmail,
-        //     TemplateType = EmailTemplateType.MeetingScheduled,
-        //     Variables = BuildEmailVariables(
-        //         "Admin",
-        //         hostEmail,
-        //         dto,
-        //         joinUrl)
-        // });
-
-        // 📧 Send email to attendees
-        // foreach (var email in dto.AttendeeEmails)
-        // {
-        //     await _emailService.SendAsync(new SendEmailRequestDto
-        //     {
-        //         To = email,
-        //         TemplateType = EmailTemplateType.MeetingScheduled,
-        //         Variables = BuildEmailVariables(
-        //             "Participant",
-        //             hostEmail,
-        //             dto,
-        //             joinUrl)
-        //     });
-        // }
+        await _repo.UpdateNextMeetingAsync(
+            dto.CompanyId,
+            dto.StartUtc);
 
         return new ScheduleMeetingResultDto
         {

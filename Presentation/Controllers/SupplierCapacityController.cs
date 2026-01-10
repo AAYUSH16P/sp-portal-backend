@@ -39,16 +39,31 @@ public class SupplierCapacityController : ControllerBase
     
     
     [HttpPost("{id}/approve")]
-    public async Task<IActionResult> Approve(Guid id)
+    public async Task<IActionResult> Approve(Guid id,bool? isRequestAdmin)
     {
-        await _service.SupplierApproveAsync(id);
+        await _service.SupplierApproveAsync(id, isRequestAdmin);
         return Ok();
     }
 
     [HttpPost("{id}/reject")]
-    public async Task<IActionResult> Reject(Guid id, [FromBody] string remark)
+    public async Task<IActionResult> Reject(Guid id, [FromBody] string remark, bool? isRequestAdmin)
     {
-        await _service.SupplierRejectAsync(id, remark);
+        await _service.SupplierRejectAsync(id, remark, isRequestAdmin);
         return Ok();
     }
+    
+    [HttpGet("admin/approved")]
+    public async Task<IActionResult> GetApprovedByAdmin()
+    {
+        var result = await _service.GetAdminApprovedAsync();
+        return Ok(result);
+    }
+
+    [HttpGet("admin/rejected")]
+    public async Task<IActionResult> GetRejectedByAdmin()
+    {
+        var result = await _service.GetAdminRejectedAsync();
+        return Ok(result);
+    }
+
 }
