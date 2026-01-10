@@ -96,8 +96,6 @@ namespace DynamicFormPresentation.Controllers
         }
         
         
-
-        
         [HttpPost("new-supplier-registered")]
         public async Task<IActionResult> NewSupplierRegistered(
             [FromBody] CompanyRegistrationRequestDto dto)
@@ -105,12 +103,29 @@ namespace DynamicFormPresentation.Controllers
             if (dto == null)
                 return BadRequest("Invalid payload");
 
-            await _supplierServiceInterface.SubmitCompanyAsync(dto);
-
-            return Ok(new
+            try
             {
-                message = "Supplier resource created successfully"
-            });
+                await _supplierServiceInterface.SubmitCompanyAsync(dto);
+
+                return Ok(new
+                {
+                    message = "Supplier resource created successfully"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = ex.Message
+                });
+            }
         }
         
         [HttpPost("{companyId}/sign-sla")]
