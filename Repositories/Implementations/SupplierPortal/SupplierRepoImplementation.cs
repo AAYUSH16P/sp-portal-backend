@@ -1062,28 +1062,34 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             using var conn = CreateConnection();
 
             var sql = @"
-                SELECT *
-                FROM suppliercapacity
-                WHERE admin_decision = true
-                ORDER BY createdat DESC;
-            ";
+        SELECT *
+        FROM suppliercapacity
+        WHERE admin_decision = true
+          AND approval_stage = 'Supplier'
+          AND status = 'Approved'
+        ORDER BY createdat DESC;
+    ";
 
             return await conn.QueryAsync<SupplierCapacity>(sql);
         }
+
 
         public async Task<IEnumerable<SupplierCapacity>> GetRejectedByAdminAsync()
         {
             using var conn = CreateConnection();
 
             var sql = @"
-                SELECT *
-                FROM suppliercapacity
-                WHERE admin_decision = false
-                ORDER BY createdat DESC;
-            ";
+        SELECT *
+        FROM suppliercapacity
+        WHERE admin_decision = true
+          AND approval_stage = 'Supplier'
+          AND status = 'Rejected'
+        ORDER BY createdat DESC;
+    ";
 
             return await conn.QueryAsync<SupplierCapacity>(sql);
         }
+
 
   
     
