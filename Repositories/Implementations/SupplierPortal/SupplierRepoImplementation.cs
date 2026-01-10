@@ -1086,16 +1086,55 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             using var conn = CreateConnection();
 
             var sql = @"
-        SELECT *
-        FROM suppliercapacity
-        WHERE admin_decision = true
-          AND approval_stage = 'Supplier'
-          AND status = 'Approved'
-        ORDER BY createdat DESC;
+        SELECT
+            sc.id,
+            sc.companyemployeeid      AS CompanyEmployeeId,
+            sc.role,
+            sc.jobtitle               AS JobTitle,
+            sc.gender,
+            sc.location,
+            sc.workingsince           AS WorkingSince,
+            sc.totalexperience        AS TotalExperience,
+            sc.ctc,
+            sc.technicalskills        AS TechnicalSkills,
+            sc.tools,
+            sc.numberofprojects       AS NumberOfProjects,
+            sc.employernote           AS EmployerNote,
+            sc.status,
+            sc.approval_stage         AS ApprovalStage,
+            sc.createdat              AS CreatedAt,
+            sc.admin_decision         AS AdminDecision,
+            sc.companyid              AS CompanyId,
+
+            c.company_name            AS CompanyName,
+
+            COALESCE(
+                ARRAY_AGG(cc.certification_name)
+                FILTER (WHERE cc.certification_name IS NOT NULL),
+                '{}'
+            ) AS Certifications
+
+        FROM suppliercapacity sc
+        INNER JOIN companies c
+            ON c.id = sc.companyid
+        LEFT JOIN company_certifications cc
+            ON cc.company_id = c.id
+
+        WHERE sc.admin_decision = true
+          AND sc.approval_stage = 'SUPPLIER'
+          AND sc.status = 'Approved'
+
+        GROUP BY
+            sc.id,
+            c.company_name
+
+        ORDER BY sc.createdat DESC;
     ";
 
             return await conn.QueryAsync<SupplierCapacity>(sql);
         }
+
+
 
 
         public async Task<IEnumerable<SupplierCapacity>> GetRejectedByAdminAsync()
@@ -1103,16 +1142,55 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             using var conn = CreateConnection();
 
             var sql = @"
-        SELECT *
-        FROM suppliercapacity
-        WHERE admin_decision = true
-          AND approval_stage = 'Supplier'
-          AND status = 'Rejected'
-        ORDER BY createdat DESC;
+        SELECT
+            sc.id,
+            sc.companyemployeeid      AS CompanyEmployeeId,
+            sc.role,
+            sc.jobtitle               AS JobTitle,
+            sc.gender,
+            sc.location,
+            sc.workingsince           AS WorkingSince,
+            sc.totalexperience        AS TotalExperience,
+            sc.ctc,
+            sc.technicalskills        AS TechnicalSkills,
+            sc.tools,
+            sc.numberofprojects       AS NumberOfProjects,
+            sc.employernote           AS EmployerNote,
+            sc.status,
+            sc.approval_stage         AS ApprovalStage,
+            sc.createdat              AS CreatedAt,
+            sc.admin_decision         AS AdminDecision,
+            sc.companyid              AS CompanyId,
+
+            c.company_name            AS CompanyName,
+
+            COALESCE(
+              ARRAY_AGG(cc.certification_name)
+              FILTER (WHERE cc.certification_name IS NOT NULL),
+              '{}'
+            ) AS Certifications
+
+        FROM suppliercapacity sc
+        INNER JOIN companies c
+            ON c.id = sc.companyid
+        LEFT JOIN company_certifications cc
+            ON cc.company_id = c.id
+
+        WHERE sc.admin_decision = true
+          AND sc.approval_stage = 'SUPPLIER'
+          AND sc.status = 'Rejected'
+
+        GROUP BY
+            sc.id,
+            c.company_name
+
+        ORDER BY sc.createdat DESC;
     ";
 
             return await conn.QueryAsync<SupplierCapacity>(sql);
         }
+
+
 
 
   
