@@ -6,6 +6,7 @@ using FinancialManagementDataAccess.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Npgsql;
+using Shared.Dtos;
 using Shared.Enum;
 
 namespace DynamicFormRepo.DynamicFormRepoImplementation
@@ -1081,120 +1082,156 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             return result;
         }
 
-        public async Task<IEnumerable<SupplierCapacity>> GetApprovedByAdminAsync()
+        public async Task<IEnumerable<SupplierAdminCapacityDto>> GetApprovedByAdminAsync()
         {
-            using var conn = CreateConnection();
-
-            var sql = @"
+            const string sql = @"
         SELECT
             sc.id,
-            sc.companyemployeeid      AS CompanyEmployeeId,
+            sc.companyemployeeid,
+            sc.companyid,
+            c.company_name AS companyname,
+            sc.workingsince,
+            sc.ctc,
+            sc.jobtitle,
             sc.role,
-            sc.jobtitle               AS JobTitle,
             sc.gender,
             sc.location,
-            sc.workingsince           AS WorkingSince,
-            sc.totalexperience        AS TotalExperience,
-            sc.ctc,
-            sc.technicalskills        AS TechnicalSkills,
+            sc.totalexperience,
+            sc.technicalskills,
             sc.tools,
-            sc.numberofprojects       AS NumberOfProjects,
-            sc.employernote           AS EmployerNote,
+            sc.numberofprojects,
+            sc.employernote,
             sc.status,
-            sc.approval_stage         AS ApprovalStage,
-            sc.createdat              AS CreatedAt,
-            sc.admin_decision         AS AdminDecision,
-            sc.companyid              AS CompanyId,
-
-            c.company_name            AS CompanyName,
+            sc.approval_stage,
 
             COALESCE(
-                ARRAY_AGG(cc.certification_name)
-                FILTER (WHERE cc.certification_name IS NOT NULL),
-                '{}'
-            ) AS Certifications
+                json_agg(
+                    jsonb_build_object(
+                        'CertificationName', cert.certification_name
+                    )
+                ) FILTER (WHERE cert.id IS NOT NULL),
+                '[]'
+            ) AS certifications
 
         FROM suppliercapacity sc
         INNER JOIN companies c
             ON c.id = sc.companyid
-        LEFT JOIN company_certifications cc
-            ON cc.company_id = c.id
+        LEFT JOIN company_certifications cert
+            ON cert.company_id = sc.companyid
 
         WHERE sc.admin_decision = true
           AND sc.approval_stage = 'Supplier'
           AND sc.status = 'Approved'
 
-        GROUP BY
-            sc.id,
-            c.company_name
-
+        GROUP BY sc.id, c.company_name
         ORDER BY sc.createdat DESC;
     ";
 
-            return await conn.QueryAsync<SupplierCapacity>(sql);
+            using var conn = CreateConnection();
+            var rows = await conn.QueryAsync(sql);
+
+            return MapAdminRows(rows);
         }
 
 
 
 
-        public async Task<IEnumerable<SupplierCapacity>> GetRejectedByAdminAsync()
+        public async Task<IEnumerable<SupplierAdminCapacityDto>> GetRejectedByAdminAsync()
         {
-            using var conn = CreateConnection();
-
-            var sql = @"
+            const string sql = @"
         SELECT
             sc.id,
-            sc.companyemployeeid      AS CompanyEmployeeId,
+            sc.companyemployeeid,
+            sc.companyid,
+            c.company_name AS companyname,
+            sc.workingsince,
+            sc.ctc,
+            sc.jobtitle,
             sc.role,
-            sc.jobtitle               AS JobTitle,
             sc.gender,
             sc.location,
-            sc.workingsince           AS WorkingSince,
-            sc.totalexperience        AS TotalExperience,
-            sc.ctc,
-            sc.technicalskills        AS TechnicalSkills,
+            sc.totalexperience,
+            sc.technicalskills,
             sc.tools,
-            sc.numberofprojects       AS NumberOfProjects,
-            sc.employernote           AS EmployerNote,
+            sc.numberofprojects,
+            sc.employernote,
             sc.status,
-            sc.approval_stage         AS ApprovalStage,
-            sc.createdat              AS CreatedAt,
-            sc.admin_decision         AS AdminDecision,
-            sc.companyid              AS CompanyId,
-
-            c.company_name            AS CompanyName,
+            sc.approval_stage,
 
             COALESCE(
-              ARRAY_AGG(cc.certification_name)
-              FILTER (WHERE cc.certification_name IS NOT NULL),
-              '{}'
-            ) AS Certifications
+                json_agg(
+                    jsonb_build_object(
+                        'CertificationName', cert.certification_name
+                    )
+                ) FILTER (WHERE cert.id IS NOT NULL),
+                '[]'
+            ) AS certifications
 
         FROM suppliercapacity sc
         INNER JOIN companies c
             ON c.id = sc.companyid
-        LEFT JOIN company_certifications cc
-            ON cc.company_id = c.id
+        LEFT JOIN company_certifications cert
+            ON cert.company_id = sc.companyid
 
         WHERE sc.admin_decision = true
           AND sc.approval_stage = 'Supplier'
           AND sc.status = 'Rejected'
 
-        GROUP BY
-            sc.id,
-            c.company_name
-
+        GROUP BY sc.id, c.company_name
         ORDER BY sc.createdat DESC;
     ";
 
-            return await conn.QueryAsync<SupplierCapacity>(sql);
+            using var conn = CreateConnection();
+            var rows = await conn.QueryAsync(sql);
+
+            return MapAdminRows(rows);
         }
 
 
 
 
   
-    
+        private IEnumerable<SupplierAdminCapacityDto> MapAdminRows(IEnumerable<dynamic> rows)
+        {
+            var result = new List<SupplierAdminCapacityDto>();
+
+            foreach (var row in rows)
+            {
+                string certificationsJson = row.certifications?.ToString() ?? "[]";
+
+                List<string> certifications =
+                    JsonConvert.DeserializeObject<List<string>>(certificationsJson)
+                    ?? new List<string>();
+
+                result.Add(new SupplierAdminCapacityDto
+                {
+                    Id = row.id,
+                    CompanyEmployeeId = row.companyemployeeid,
+                    CompanyId = row.companyid,
+                    CompanyName = row.companyname,
+
+                    WorkingSince = row.workingsince,
+                    CTC = row.ctc,
+                    JobTitle = row.jobtitle,
+                    Role = row.role,
+                    Gender = row.gender,
+                    Location = row.location,
+                    TotalExperience = row.totalexperience,
+                    TechnicalSkills = row.technicalskills,
+                    Tools = row.tools,
+                    NumberOfProjects = row.numberofprojects,
+                    EmployerNote = row.employernote,
+
+                    Status = Enum.Parse<SupplierStatus>(row.status.ToString(), true),
+                    ApprovalStage = Enum.Parse<ApprovalStage>(row.approval_stage.ToString(), true),
+
+                    Certifications = certifications
+                });
+            }
+
+            return result;
+        }
+
   
   
   

@@ -211,3 +211,4 @@
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/StarkbankEcdsa.dll
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/.DS_Store
 /Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/Attachments/SLA - Talented Staff.pdf
+/Users/aayushraj/Downloads/dynamic/Presentation/bin/Debug/net8.0/EmailTemplates/ForgotPassword.html

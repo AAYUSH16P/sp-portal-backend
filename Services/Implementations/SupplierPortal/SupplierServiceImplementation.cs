@@ -4,6 +4,7 @@ using Shared;
 using ClosedXML.Excel;
 using FinancialManagementDataAccess.Models;
 using Infrastructure.Security;
+using Shared.Dtos;
 using Shared.Enum;
 
 
@@ -387,15 +388,16 @@ namespace DynamicFormService.DynamicFormServiceImplementation
         public Task<IEnumerable<SupplierResourceDto>> GetEligibleSuppliersAsync()
             => _supplierRepoInterface.GetEligibleSuppliersAsync();
         
-        public async Task<IEnumerable<SupplierCapacity>> GetAdminApprovedAsync()
+        public async Task<IEnumerable<SupplierAdminCapacityDto>> GetAdminApprovedAsync()
         {
             return await _supplierRepoInterface.GetApprovedByAdminAsync();
         }
 
-        public async Task<IEnumerable<SupplierCapacity>> GetAdminRejectedAsync()
+        public async Task<IEnumerable<SupplierAdminCapacityDto>> GetAdminRejectedAsync()
         {
             return await _supplierRepoInterface.GetRejectedByAdminAsync();
         }
+
 
     }
 }
