@@ -95,6 +95,7 @@ public class CalendarService : ICalendarService
         var created = await _client.Users[hostEmail].Events.PostAsync(ev);
 
         var joinUrl = created!.OnlineMeeting?.JoinUrl!;
+        
         await _repo.UpdateNextMeetingAsync(
             dto.CompanyId,
             dto.StartUtc);

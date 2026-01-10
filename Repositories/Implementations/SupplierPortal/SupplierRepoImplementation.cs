@@ -702,7 +702,8 @@ namespace DynamicFormRepo.DynamicFormRepoImplementation
                 UPDATE suppliercapacity SET
                     status = @Status::supplier_status,
                     approval_stage = @ApprovalStage,
-                    remark = @Remark
+                    remark = @Remark,
+                    admin_decision = COALESCE(@AdminDecision, admin_decision)
                 WHERE id = @Id;
             ";
 
