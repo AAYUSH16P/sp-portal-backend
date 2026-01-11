@@ -1199,9 +1199,15 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             {
                 string certificationsJson = row.certifications?.ToString() ?? "[]";
 
-                List<string> certifications =
-                    JsonConvert.DeserializeObject<List<string>>(certificationsJson)
-                    ?? new List<string>();
+                // Step 1: Deserialize as objects
+                var certificationObjects = JsonConvert.DeserializeObject<List<CertificationDto>>(certificationsJson)
+                                           ?? new List<CertificationDto>();
+
+                // Step 2: Extract names
+                var certifications = certificationObjects
+                    .Select(x => x.CertificationName)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
 
                 result.Add(new SupplierAdminCapacityDto
                 {
