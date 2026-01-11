@@ -115,7 +115,7 @@ public class CompanyApprovalService : ICompanyApprovalService
             new Dictionary<string, string>
             {
                 ["SupplierContactName"] = contactName,
-                ["Remark"] = remark
+                ["RejectionReason"] = remark
             },
             out var subject);
 

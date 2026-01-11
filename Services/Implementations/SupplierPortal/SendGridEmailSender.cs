@@ -52,9 +52,7 @@ public class SendGridEmailSender : IEmailSender
         );
         
         _logger.LogInformation("SLA PDF path resolved to: {Path}", slaPath);
-
-
-
+        
         if (!File.Exists(slaPath))
         {
             throw new FileNotFoundException("SLA PDF not found", slaPath);
