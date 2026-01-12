@@ -157,6 +157,37 @@ public class CompanyApprovalService : ICompanyApprovalService
     }
 
     
+    public async Task<LoginResponseDto> RefreshToken(CompanyLoginDto dto)
+    {
+        var companyId = await _repo.GetLoginDataAsync(dto.Email);
+
+        if (companyId == null && companyId?.CompanyId != dto.CompanyId)
+            throw new UnauthorizedAccessException("Invalid credentials");
+
+        var data = await _repo.GetLoginDataByCompanyIdAsync(companyId.CompanyId);
+
+        if (data == null)
+            throw new UnauthorizedAccessException("Invalid credentials");
+
+        
+        var token = _jwtGenerator.Generate(
+            data.CompanyId,
+            data.IsSlaSigned,
+            dto.Email,
+            data.CompanyName,
+            data.IsPasswordChanged,
+            data.IsAcknowledged,
+            data.NextMeetingAt,
+            out var expiresAt
+        );
+
+        return new LoginResponseDto
+        {
+            Token = token,
+            ExpiresAt = expiresAt
+        };
+    }
+    
     
     public async Task<CompanyDto> GetDetailsAsync(Guid companyId)
     {

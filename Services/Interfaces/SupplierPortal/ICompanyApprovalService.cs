@@ -14,6 +14,7 @@ public interface ICompanyApprovalService
     Task<IEnumerable<SupplierCapacity>> GetSupplierRejectedAsync(Guid companyId);
     Task<IEnumerable<SupplierCapacity>> GetHrRejectedAsync(Guid companyId);
     Task<bool> AcknowledgeCompanyAsync(Guid companyId);
+    Task<LoginResponseDto> RefreshToken(CompanyLoginDto dto);
 
 
 }

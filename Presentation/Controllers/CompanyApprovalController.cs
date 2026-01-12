@@ -29,6 +29,13 @@ public class CompanyApprovalController : ControllerBase
         var result = await _service.LoginAsync(dto);
         return Ok(result);
     }
+    
+    [HttpPost("refreshToken")]
+    public async Task<IActionResult> Refresh([FromBody] CompanyLoginDto dto)
+    {
+        var result = await _service.RefreshToken(dto);
+        return Ok(result);
+    }
 
     [HttpPost("approve")]
     public async Task<IActionResult> Approve([FromBody] ApproveCompanyDto dto)
