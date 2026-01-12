@@ -1120,7 +1120,7 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
             ON cert.company_id = sc.companyid
 
         WHERE sc.admin_decision = true
-          AND sc.approval_stage = 'Supplier'
+          AND sc.approval_stage = 'Completed'
           AND sc.status = 'Approved'
 
         GROUP BY sc.id, c.company_name
