@@ -207,8 +207,13 @@ public class CompanyChangeRequestRepository : ICompanyChangeRequestRepository
 
    
    
-private Task UpdateCompany(IDbConnection conn, IDbTransaction tx,
-    Guid companyId, string column, string value)
+private Task UpdateCompany(
+    IDbConnection conn,
+    IDbTransaction tx,
+    Guid companyId,
+    string column,
+    object value
+)
 {
     return conn.ExecuteAsync($@"
         UPDATE companies
@@ -217,6 +222,7 @@ private Task UpdateCompany(IDbConnection conn, IDbTransaction tx,
         WHERE id = @CompanyId
     ", new { Value = value, CompanyId = companyId }, tx);
 }
+
 
 
 
