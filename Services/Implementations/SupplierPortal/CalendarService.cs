@@ -72,10 +72,10 @@ public class CalendarService : ICalendarService
     }
 
 
-    public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
-        string hostEmail,
-        ScheduleMeetingDto dto)
-    {
+ public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
+    string hostEmail,
+    ScheduleMeetingDto dto)
+{
     _logger.LogInformation(
         "ScheduleMeetingAsync started. HostEmail: {HostEmail}, CompanyId: {CompanyId}",
         hostEmail,
@@ -159,60 +159,60 @@ public class CalendarService : ICalendarService
     _logger.LogInformation("Constructing email body.");
 
     var emailBody = $@"
-        <html>
-        <body style='font-family:Segoe UI,Arial; color:#333; line-height:1.6;'>
+<html>
+<body style='font-family:Segoe UI,Arial; color:#333; line-height:1.6;'>
 
-        <p>Dear {companyName} Team,</p>
+<p>Dear {companyName} Team,</p>
 
-        <p>
-        Thank you for booking a meeting with <strong>Westgate IT Hub (PVT) Ltd</strong>.
-        We appreciate your time and look forward to our discussion.
-        </p>
+<p>
+Thank you for booking a meeting with <strong>Westgate IT Hub (PVT) Ltd</strong>.
+We appreciate your time and look forward to our discussion.
+</p>
 
-        <p>
-        Your meeting has been successfully scheduled. Please find the meeting details
-        below and use the link provided to join at the scheduled time.
-        </p>
+<p>
+Your meeting has been successfully scheduled. Please find the meeting details
+below and use the link provided to join at the scheduled time.
+</p>
 
-        <hr/>
+<hr/>
 
-        <h3>Meeting Details</h3>
+<h3>Meeting Details</h3>
 
-        <p>
-        <strong>Platform:</strong> Microsoft Teams<br/>
-        <strong>Join Meeting Link:</strong><br/>
-        <a href='{joinUrl}'>{joinUrl}</a>
-        </p>
+<p>
+<strong>Platform:</strong> Microsoft Teams<br/>
+<strong>Join Meeting Link:</strong><br/>
+<a href='{joinUrl}'>{joinUrl}</a>
+</p>
 
-        <p>
-        We kindly request you to join the meeting a few minutes before the scheduled time
-        to ensure a smooth start.
-        </p>
+<p>
+We kindly request you to join the meeting a few minutes before the scheduled time
+to ensure a smooth start.
+</p>
 
-        <p>
-        If you are unable to attend the meeting as planned, please inform us at least
-        30 minutes in advance (preferably 1 hour prior) so we can make appropriate arrangements.
-        </p>
+<p>
+If you are unable to attend the meeting as planned, please inform us at least
+30 minutes in advance (preferably 1 hour prior) so we can make appropriate arrangements.
+</p>
 
-        <p>
-        Should you face any issues joining the meeting or require further assistance,
-        please feel free to reply to this email.
-        </p>
+<p>
+Should you face any issues joining the meeting or require further assistance,
+please feel free to reply to this email.
+</p>
 
-        <br/>
+<br/>
 
-        <p>We look forward to speaking with you.</p>
+<p>We look forward to speaking with you.</p>
 
-        <p>
-        Kind regards,<br/>
-        <strong>Westgate IT Hub (PVT) Ltd</strong><br/>
-        Ayush Kumar<br/>
-        Director<br/>
-        <a href='mailto:ayush@westgateithub.com'>ayush@westgateithub.com</a>
-        </p>
+<p>
+Kind regards,<br/>
+<strong>Westgate IT Hub (PVT) Ltd</strong><br/>
+Ayush Kumar<br/>
+Director<br/>
+<a href='mailto:ayush@westgateithub.com'>ayush@westgateithub.com</a>
+</p>
 
-        </body>
-        </html>";
+</body>
+</html>";
 
     // 5️⃣ Send email
     var message = new Message
