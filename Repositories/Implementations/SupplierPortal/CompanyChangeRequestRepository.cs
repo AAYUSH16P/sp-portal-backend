@@ -113,8 +113,14 @@ public class CompanyChangeRequestRepository : ICompanyChangeRequestRepository
                 break;
 
             case "YearEstablished":
-                await UpdateCompany(conn, tx, request.CompanyId, "year_established", request.NewValue);
+                if (!int.TryParse(request.NewValue, out var year))
+                    throw new InvalidOperationException(
+                        $"Invalid YearEstablished value: {request.NewValue}"
+                    );
+
+                await UpdateCompany(conn, tx, request.CompanyId, "year_established", year);
                 break;
+
 
             case "CompanyOverview":
                 await UpdateCompany(conn, tx, request.CompanyId, "company_overview", request.NewValue);
