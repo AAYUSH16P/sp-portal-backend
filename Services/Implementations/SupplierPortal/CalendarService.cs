@@ -72,10 +72,10 @@ public class CalendarService : ICalendarService
     }
 
 
- public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
-    string hostEmail,
-    ScheduleMeetingDto dto)
-{
+    public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
+        string hostEmail,
+        ScheduleMeetingDto dto)
+    {
     _logger.LogInformation(
         "ScheduleMeetingAsync started. HostEmail: {HostEmail}, CompanyId: {CompanyId}",
         hostEmail,
@@ -89,7 +89,7 @@ public class CalendarService : ICalendarService
     }
 
     _logger.LogInformation(
-        "Attendee count: {AttendeeCount}",
+        "Attendee emails count: {Count}",
         dto.AttendeeEmails.Count);
 
     // 1️⃣ Build attendees
@@ -122,7 +122,7 @@ public class CalendarService : ICalendarService
     };
 
     _logger.LogInformation(
-        "Creating Teams meeting. Subject: {Subject}, StartUtc: {StartUtc}, EndUtc: {EndUtc}",
+        "Creating Teams meeting. Subject: {Subject}, StartUtc: {Start}, EndUtc: {End}",
         dto.Subject,
         dto.StartUtc,
         dto.EndUtc);
@@ -131,10 +131,7 @@ public class CalendarService : ICalendarService
 
     if (created?.OnlineMeeting?.JoinUrl == null)
     {
-        _logger.LogError(
-            "Meeting creation failed. HostEmail: {HostEmail}",
-            hostEmail);
-
+        _logger.LogError("Meeting creation failed for HostEmail: {HostEmail}", hostEmail);
         throw new Exception("Meeting creation failed");
     }
 
@@ -151,22 +148,16 @@ public class CalendarService : ICalendarService
         "Fetching company name for recipient email: {RecipientEmail}",
         recipientEmail);
 
-    var companyName = await GetCompanyNameByEmailAsync(recipientEmail);
-
-    if (string.IsNullOrWhiteSpace(companyName))
-    {
-        _logger.LogWarning(
-            "Company name not found for email {RecipientEmail}. Using fallback value.",
-            recipientEmail);
-
-        companyName = "Your Company";
-    }
+    var companyName = await GetCompanyNameByEmailAsync(recipientEmail)
+                      ?? "Your Company";
 
     _logger.LogInformation(
         "Company name resolved as: {CompanyName}",
         companyName);
 
     // 4️⃣ Build email body
+    _logger.LogInformation("Constructing email body.");
+
     var emailBody = $@"
         <html>
         <body style='font-family:Segoe UI,Arial; color:#333; line-height:1.6;'>
@@ -223,8 +214,6 @@ public class CalendarService : ICalendarService
         </body>
         </html>";
 
-    _logger.LogInformation("Email body constructed successfully.");
-
     // 5️⃣ Send email
     var message = new Message
     {
@@ -243,10 +232,11 @@ public class CalendarService : ICalendarService
     try
     {
         _logger.LogInformation(
-            "Sending email from noreply@westgateithub.com to {RecipientCount} recipients.",
+            "Sending email from HostEmail: {HostEmail} to {RecipientCount} recipient(s).",
+            hostEmail,
             dto.AttendeeEmails.Count);
 
-        await _client.Users["noreply@westgateithub.com"]
+        await _client.Users[hostEmail]
             .SendMail
             .PostAsync(new SendMailPostRequestBody
             {
@@ -266,7 +256,7 @@ public class CalendarService : ICalendarService
 
     // 6️⃣ Update DB
     _logger.LogInformation(
-        "Updating next meeting time in DB. CompanyId: {CompanyId}, StartUtc: {StartUtc}",
+        "Updating next meeting time. CompanyId: {CompanyId}, StartUtc: {StartUtc}",
         dto.CompanyId,
         dto.StartUtc);
 
