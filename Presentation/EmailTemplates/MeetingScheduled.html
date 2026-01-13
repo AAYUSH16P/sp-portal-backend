@@ -1,40 +1,118 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Meeting Scheduled</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6;">
-<p>Hi {{RecipientName}},</p>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Segoe UI, Arial, sans-serif;">
 
-<p>Your meeting has been successfully scheduled with the following details:</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8; padding:20px;">
+    <tr>
+        <td align="center">
 
-<table style="border-collapse: collapse;">
-    <tr>
-        <td><strong>Subject:</strong></td>
-        <td>{{Subject}}</td>
-    </tr>
-    <tr>
-        <td><strong>Date:</strong></td>
-        <td>{{Date}}</td>
-    </tr>
-    <tr>
-        <td><strong>Time:</strong></td>
-        <td>{{Time}}</td>
-    </tr>
-    <tr>
-        <td><strong>Host:</strong></td>
-        <td>{{HostEmail}}</td>
+            <!-- Main container -->
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background-color:#0b5ed7; color:#ffffff; padding:24px; text-align:center;">
+                        <h2 style="margin:0; font-weight:600;">Meeting Confirmation</h2>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:30px; color:#333333; line-height:1.6; font-size:15px;">
+
+                        <p>Dear <strong>{{CompanyName}}</strong> Team,</p>
+
+                        <p>
+                            Thank you for booking a meeting with
+                            <strong>Westgate IT Hub (PVT) Ltd</strong>.
+                            We appreciate your time and look forward to our discussion.
+                        </p>
+
+                        <p>
+                            Your meeting has been successfully scheduled.
+                            Please find the meeting details below and use the link provided
+                            to join at the scheduled time.
+                        </p>
+
+                        <!-- Meeting details box -->
+                        <table width="100%" cellpadding="0" cellspacing="0"
+                               style="background-color:#f8f9fb; border:1px solid #e3e6ea; border-radius:6px; padding:16px; margin:20px 0;">
+                            <tr>
+                                <td style="font-size:14px;">
+
+                                    <p style="margin:6px 0;">
+                                        <strong>Subject:</strong> {{MeetingSubject}}
+                                    </p>
+
+                                    <p style="margin:6px 0;">
+                                        <strong>Date & Time:</strong><br/>
+                                        {{StartTime}} – {{EndTime}}
+                                    </p>
+
+                                    <p style="margin:6px 0;">
+                                        <strong>Platform:</strong> Microsoft Teams
+                                    </p>
+
+                                    <p style="margin:12px 0;">
+                                        <strong>Join Meeting:</strong><br/>
+                                        <a href="{{JoinUrl}}"
+                                           style="color:#0b5ed7; word-break:break-all;">
+                                            {{JoinUrl}}
+                                        </a>
+                                    </p>
+
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p>
+                            We kindly request you to join the meeting a few minutes before
+                            the scheduled time to ensure a smooth start.
+                        </p>
+
+                        <p>
+                            If you are unable to attend the meeting as planned, please inform us
+                            at least <strong>30 minutes in advance</strong>
+                            (preferably 1 hour prior) so we can make appropriate arrangements.
+                        </p>
+
+                        <p>
+                            Should you face any issues joining the meeting or require further
+                            assistance, please feel free to reply to this email.
+                        </p>
+
+                        <p>
+                            We look forward to speaking with you.
+                        </p>
+
+                        <p style="margin-top:30px;">
+                            Kind regards,<br/>
+                            <strong>{{Organizer}}</strong><br/>
+                            Ayush Kumar<br/>
+                            Director<br/>
+                            <a href="mailto:ayush@westgateithub.com"
+                               style="color:#0b5ed7;">ayush@westgateithub.com</a>
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color:#f1f3f6; padding:16px; text-align:center; font-size:12px; color:#777;">
+                        © {{CurrentYear}} Westgate IT Hub (PVT) Ltd. All rights reserved.
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
     </tr>
 </table>
 
-<p>
-    <strong>Join Meeting:</strong><br/>
-    <a href="{{JoinUrl}}">{{JoinUrl}}</a>
-</p>
-
-<p>Thanks,<br/>
-    Supplier Portal Team</p>
 </body>
 </html>
