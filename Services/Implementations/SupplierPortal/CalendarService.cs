@@ -72,13 +72,25 @@ public class CalendarService : ICalendarService
     }
 
 
-  public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
+ public async Task<ScheduleMeetingResultDto> ScheduleMeetingAsync(
     string hostEmail,
     ScheduleMeetingDto dto)
 {
+    _logger.LogInformation(
+        "ScheduleMeetingAsync started. HostEmail: {HostEmail}, CompanyId: {CompanyId}",
+        hostEmail,
+        dto.CompanyId);
+
     // Safety check
     if (dto.AttendeeEmails == null || !dto.AttendeeEmails.Any())
+    {
+        _logger.LogWarning("No attendee emails provided. Aborting meeting scheduling.");
         throw new ArgumentException("At least one attendee email is required");
+    }
+
+    _logger.LogInformation(
+        "Attendee count: {AttendeeCount}",
+        dto.AttendeeEmails.Count);
 
     // 1️⃣ Build attendees
     var attendees = dto.AttendeeEmails.Select(email =>
@@ -87,6 +99,8 @@ public class CalendarService : ICalendarService
             EmailAddress = new EmailAddress { Address = email },
             Type = AttendeeType.Required
         }).ToList();
+
+    _logger.LogInformation("Attendees mapped successfully.");
 
     // 2️⃣ Create Teams meeting
     var ev = new Event
@@ -107,74 +121,109 @@ public class CalendarService : ICalendarService
         OnlineMeetingProvider = OnlineMeetingProviderType.TeamsForBusiness
     };
 
+    _logger.LogInformation(
+        "Creating Teams meeting. Subject: {Subject}, StartUtc: {StartUtc}, EndUtc: {EndUtc}",
+        dto.Subject,
+        dto.StartUtc,
+        dto.EndUtc);
+
     var created = await _client.Users[hostEmail].Events.PostAsync(ev);
 
     if (created?.OnlineMeeting?.JoinUrl == null)
+    {
+        _logger.LogError(
+            "Meeting creation failed. HostEmail: {HostEmail}",
+            hostEmail);
+
         throw new Exception("Meeting creation failed");
+    }
 
     var joinUrl = created.OnlineMeeting.JoinUrl;
 
+    _logger.LogInformation(
+        "Teams meeting created successfully. EventId: {EventId}",
+        created.Id);
+
     // 3️⃣ Fetch company name using attendee email
     var recipientEmail = dto.AttendeeEmails.First();
-    var companyName = await GetCompanyNameByEmailAsync(recipientEmail)
-                      ?? "Your Company";
 
-    // 4️⃣ Email body (company name as recipient)
+    _logger.LogInformation(
+        "Fetching company name for recipient email: {RecipientEmail}",
+        recipientEmail);
+
+    var companyName = await GetCompanyNameByEmailAsync(recipientEmail);
+
+    if (string.IsNullOrWhiteSpace(companyName))
+    {
+        _logger.LogWarning(
+            "Company name not found for email {RecipientEmail}. Using fallback value.",
+            recipientEmail);
+
+        companyName = "Your Company";
+    }
+
+    _logger.LogInformation(
+        "Company name resolved as: {CompanyName}",
+        companyName);
+
+    // 4️⃣ Build email body
     var emailBody = $@"
-<html>
-<body style='font-family:Segoe UI,Arial; color:#333; line-height:1.6;'>
+        <html>
+        <body style='font-family:Segoe UI,Arial; color:#333; line-height:1.6;'>
 
-<p>Dear {companyName} Team,</p>
+        <p>Dear {companyName} Team,</p>
 
-<p>
-Thank you for booking a meeting with <strong>Westgate IT Hub (PVT) Ltd</strong>.
-We appreciate your time and look forward to our discussion.
-</p>
+        <p>
+        Thank you for booking a meeting with <strong>Westgate IT Hub (PVT) Ltd</strong>.
+        We appreciate your time and look forward to our discussion.
+        </p>
 
-<p>
-Your meeting has been successfully scheduled. Please find the meeting details
-below and use the link provided to join at the scheduled time.
-</p>
+        <p>
+        Your meeting has been successfully scheduled. Please find the meeting details
+        below and use the link provided to join at the scheduled time.
+        </p>
 
-<hr/>
+        <hr/>
 
-<h3>Meeting Details</h3>
+        <h3>Meeting Details</h3>
 
-<p>
-<strong>Platform:</strong> Microsoft Teams<br/>
-<strong>Join Meeting Link:</strong><br/>
-<a href='{joinUrl}'>{joinUrl}</a>
-</p>
+        <p>
+        <strong>Platform:</strong> Microsoft Teams<br/>
+        <strong>Join Meeting Link:</strong><br/>
+        <a href='{joinUrl}'>{joinUrl}</a>
+        </p>
 
-<p>
-We kindly request you to join the meeting a few minutes before the scheduled time
-to ensure a smooth start.
-</p>
+        <p>
+        We kindly request you to join the meeting a few minutes before the scheduled time
+        to ensure a smooth start.
+        </p>
 
-<p>
-If you are unable to attend the meeting as planned, please inform us at least
-30 minutes in advance (preferably 1 hour prior) so we can make appropriate arrangements.
-</p>
+        <p>
+        If you are unable to attend the meeting as planned, please inform us at least
+        30 minutes in advance (preferably 1 hour prior) so we can make appropriate arrangements.
+        </p>
 
-<p>
-Should you face any issues joining the meeting or require further assistance,
-please feel free to reply to this email.
-</p>
+        <p>
+        Should you face any issues joining the meeting or require further assistance,
+        please feel free to reply to this email.
+        </p>
 
-<br/>
+        <br/>
 
-<p>We look forward to speaking with you.</p>
+        <p>We look forward to speaking with you.</p>
 
-<p>
-Kind regards,<br/>
-<strong>Westgate IT Hub (PVT) Ltd</strong><br/>
-Ayush Kumar<br/>
-Director<br/>
-<a href='mailto:ayush@westgateithub.com'>ayush@westgateithub.com</a>
-</p>
+        <p>
+        Kind regards,<br/>
+        <strong>Westgate IT Hub (PVT) Ltd</strong><br/>
+        Ayush Kumar<br/>
+        Director<br/>
+        <a href='mailto:ayush@westgateithub.com'>ayush@westgateithub.com</a>
+        </p>
 
-</body>
-</html>";
+        </body>
+        </html>";
+
+    _logger.LogInformation("Email body constructed successfully.");
 
     // 5️⃣ Send email
     var message = new Message
@@ -193,23 +242,45 @@ Director<br/>
 
     try
     {
-        await _client.Users[hostEmail]
+        _logger.LogInformation(
+            "Sending email from noreply@westgateithub.com to {RecipientCount} recipients.",
+            dto.AttendeeEmails.Count);
+
+        await _client.Users["noreply@westgateithub.com"]
             .SendMail
             .PostAsync(new SendMailPostRequestBody
             {
                 Message = message,
                 SaveToSentItems = true
             });
+
+        _logger.LogInformation("Email sent successfully.");
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Meeting created but email sending failed");
+        _logger.LogError(
+            ex,
+            "Meeting created but email sending failed. EventId: {EventId}",
+            created.Id);
     }
 
     // 6️⃣ Update DB
+    _logger.LogInformation(
+        "Updating next meeting time in DB. CompanyId: {CompanyId}, StartUtc: {StartUtc}",
+        dto.CompanyId,
+        dto.StartUtc);
+
     await _repo.UpdateNextMeetingAsync(dto.CompanyId, dto.StartUtc);
 
+    _logger.LogInformation(
+        "Next meeting time updated successfully for CompanyId: {CompanyId}",
+        dto.CompanyId);
+
     // 7️⃣ Return result
+    _logger.LogInformation(
+        "ScheduleMeetingAsync completed successfully. EventId: {EventId}",
+        created.Id);
+
     return new ScheduleMeetingResultDto
     {
         EventId = created.Id!,
