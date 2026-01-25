@@ -50,5 +50,6 @@ namespace DynamicFormRepo.DynamicFormRepoInterface
         Task<IEnumerable<SupplierAdminCapacityDto>> GetApprovedByAdminAsync();
         Task<IEnumerable<SupplierAdminCapacityDto>> GetRejectedByAdminAsync();
 
+        Task<IEnumerable<CompanyListDto>> GetCompaniesLookupAsync();
     }
 }

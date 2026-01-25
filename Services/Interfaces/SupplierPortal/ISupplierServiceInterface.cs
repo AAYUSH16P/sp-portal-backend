@@ -48,6 +48,8 @@ namespace DynamicFormService.DynamicFormServiceInterface
         
         Task<IEnumerable<SupplierAdminCapacityDto>> GetAdminApprovedAsync();
         Task<IEnumerable<SupplierAdminCapacityDto>> GetAdminRejectedAsync();
+        Task<IEnumerable<CompanyListDto>> GetCompaniesLookupAsync();
+
 
     }
 }

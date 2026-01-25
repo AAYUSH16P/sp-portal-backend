@@ -1186,6 +1186,23 @@ public async Task<string?> GetPasswordHashAsync(Guid companyId)
 
             return MapAdminRows(rows);
         }
+        
+        
+        public async Task<IEnumerable<CompanyListDto>> GetCompaniesLookupAsync()
+        {
+            const string sql = @"
+        SELECT 
+            id           AS ""Id"",
+            company_name AS ""CompanyName""
+        FROM public.companies
+        ORDER BY company_name;
+    ";
+
+            using var conn = CreateConnection();
+            var result = await conn.QueryAsync<CompanyListDto>(sql);  
+            return result;
+        }
+
 
 
 

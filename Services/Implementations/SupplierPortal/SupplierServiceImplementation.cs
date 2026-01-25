@@ -288,6 +288,9 @@ namespace DynamicFormService.DynamicFormServiceImplementation
         // 🔹 Persist
         await _supplierRepoInterface.UpdateAsyncReferEmployee(entity);
     }
+    
+    public Task<IEnumerable<CompanyListDto>> GetCompaniesLookupAsync()
+        => _supplierRepoInterface.GetCompaniesLookupAsync();
 
 
     private IEnumerable<SupplierResourceDto> Map(IEnumerable<SupplierCapacity> list)

@@ -179,6 +179,15 @@ namespace DynamicFormPresentation.Controllers
             return Ok(new { message = "Company updated successfully" });
         }
 
+        
+        
+        [HttpGet("All-supplier")]
+        public async Task<IActionResult> GetAllSuppliers()
+        {
+            var ab = await _supplierServiceInterface.GetCompaniesLookupAsync();
+            return Ok(ab);
+        }
+
 
         
     }
