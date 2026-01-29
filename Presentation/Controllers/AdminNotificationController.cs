@@ -12,6 +12,10 @@ public class AdminNotificationController : ControllerBase
 {
     private readonly INotificationService _service;
 
+    // ✅ Fixed Admin GUID (POC purpose)
+    private static readonly Guid AdminId =
+        Guid.Parse("00000000-0000-0000-0000-000000000001");
+
     public AdminNotificationController(INotificationService service)
     {
         _service = service;
@@ -20,39 +24,29 @@ public class AdminNotificationController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateNotificationDto dto)
     {
-        int adminId = 1;
-
-        await _service.CreateAsync(dto, adminId);
+        await _service.CreateAsync(dto, AdminId);
         return Ok(new { message = "Notification created successfully" });
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(
-        int id,
-        [FromForm] UpdateNotificationDto dto)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateNotificationDto dto)
     {
-        int adminId = 1;
         dto.NotificationId = id;
-
-        await _service.UpdateAsync(dto, adminId);
+        await _service.UpdateAsync(dto, AdminId);
         return Ok(new { message = "Notification updated successfully" });
     }
 
     [HttpPost("{id}/send")]
     public async Task<IActionResult> Send(int id)
     {
-        int adminId = 1;
-
-        await _service.SendAsync(id, adminId);
+        await _service.SendAsync(id, AdminId);
         return Ok(new { message = "Notification sent successfully" });
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        int adminId = 1;
-
-        await _service.DeleteAsync(id, adminId);
+        await _service.DeleteAsync(id, AdminId);
         return Ok(new { message = "Notification deleted successfully" });
     }
 }

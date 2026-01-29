@@ -25,7 +25,7 @@ public class UserNotificationRepository : IUserNotificationRepository
         return new NpgsqlConnection(_connectionString);
     }
 
-    public async Task<IEnumerable<Notification>> GetNotificationsAsync(int supplierId)
+    public async Task<IEnumerable<Notification>> GetNotificationsAsync(Guid supplierId)
     {
         const string sql = """
         SELECT
@@ -51,7 +51,7 @@ public class UserNotificationRepository : IUserNotificationRepository
         return await conn.QueryAsync<Notification>(sql, new { SupplierId = supplierId });
     }
 
-    public async Task<Notification?> GetByIdAsync(int id, int supplierId)
+    public async Task<Notification?> GetByIdAsync(int id, Guid supplierId)
     {
         const string sql = """
         SELECT n.*
@@ -69,7 +69,7 @@ public class UserNotificationRepository : IUserNotificationRepository
             new { Id = id, SupplierId = supplierId });
     }
 
-    public async Task MarkAsReadAsync(int id, int supplierId)
+    public async Task MarkAsReadAsync(int id, Guid supplierId)
     {
         const string sql = """
         INSERT INTO notification_reads
@@ -86,7 +86,7 @@ public class UserNotificationRepository : IUserNotificationRepository
         await conn.ExecuteAsync(sql, new { Id = id, SupplierId = supplierId });
     }
 
-    public async Task<int> GetUnreadCountAsync(int supplierId)
+    public async Task<int> GetUnreadCountAsync(Guid supplierId)
     {
         const string sql = """
         SELECT COUNT(*)

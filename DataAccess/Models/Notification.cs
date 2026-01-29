@@ -17,6 +17,8 @@ public class Notification
     public byte[]? AttachmentContent { get; set; }
     public string? AttachmentMime { get; set; }
 
-    public int CreatedByAdminId { get; set; }
+    public Guid CreatedByAdminId { get; set; }
     public DateTime CreatedAt { get; set; }
+    public Guid? UpdatedByAdminId { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

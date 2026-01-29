@@ -17,7 +17,7 @@ public class NotificationService : INotificationService
         _repo = repo;
     }
 
-    public async Task CreateAsync(CreateNotificationDto dto, int adminId)
+    public async Task CreateAsync(CreateNotificationDto dto, Guid adminId)
     {
         byte[]? fileBytes = null;
         string? mime = null;
@@ -53,7 +53,7 @@ public class NotificationService : INotificationService
     
     
 
-    public async Task UpdateAsync(UpdateNotificationDto dto, int adminId)
+    public async Task UpdateAsync(UpdateNotificationDto dto, Guid adminId)
     {
         var existing = await _repo.GetByIdAsync(dto.NotificationId);
 
@@ -92,7 +92,7 @@ public class NotificationService : INotificationService
             AttachmentName = attachmentName,
             AttachmentContent = attachmentBytes,
             AttachmentMime = attachmentMime,
-
+            UpdatedByAdminId = adminId
         };
 
         await _repo.UpdateAsync(updated);
@@ -107,7 +107,7 @@ public class NotificationService : INotificationService
     }
     
     
-    public async Task SendAsync(int notificationId, int adminId)
+    public async Task SendAsync(int notificationId, Guid adminId)
     {
         var notification = await _repo.GetByIdAsync(notificationId);
 
@@ -120,7 +120,7 @@ public class NotificationService : INotificationService
         await _repo.SendAsync(notificationId, adminId);
     }
 
-    public async Task DeleteAsync(int notificationId, int adminId)
+    public async Task DeleteAsync(int notificationId, Guid adminId)
     {
         var notification = await _repo.GetByIdAsync(notificationId);
 

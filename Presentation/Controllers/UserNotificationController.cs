@@ -14,26 +14,25 @@ public class UserNotificationController : ControllerBase
         _service = service;
     }
 
-    private int SupplierId => int.Parse(User.FindFirst("SupplierId").Value);
-
+    // ✅ supplierId passed explicitly (UUID)
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-        => Ok(await _service.GetNotificationsAsync(SupplierId));
+    public async Task<IActionResult> GetAll([FromQuery] Guid supplierId)
+        => Ok(await _service.GetNotificationsAsync(supplierId));
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> Get(int id)
-        => Ok(await _service.GetByIdAsync(id, SupplierId));
+    public async Task<IActionResult> Get(int id, [FromQuery] Guid supplierId)
+        => Ok(await _service.GetByIdAsync(id, supplierId));
 
     [HttpPost("{id}/read")]
-    public async Task<IActionResult> MarkAsRead(int id)
+    public async Task<IActionResult> MarkAsRead(int id, [FromQuery] Guid supplierId)
     {
-        await _service.MarkAsReadAsync(id, SupplierId);
+        await _service.MarkAsReadAsync(id, supplierId);
         return Ok();
     }
 
     [HttpGet("unread-count")]
-    public async Task<IActionResult> UnreadCount()
-        => Ok(await _service.GetUnreadCountAsync(SupplierId));
+    public async Task<IActionResult> UnreadCount([FromQuery] Guid supplierId)
+        => Ok(await _service.GetUnreadCountAsync(supplierId));
 
     [HttpGet("{id}/attachment")]
     public async Task<IActionResult> Download(int id)

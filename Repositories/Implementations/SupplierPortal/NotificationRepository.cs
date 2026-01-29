@@ -48,7 +48,7 @@ public class NotificationRepository : INotificationRepository
         }
     }
 
-    public async Task SendAsync(int id, int adminId)
+    public async Task SendAsync(int id, Guid adminId)
     {
         await _db.ExecuteAsync(@"
         UPDATE notifications
@@ -58,7 +58,7 @@ public class NotificationRepository : INotificationRepository
         WHERE notification_id = @Id", new { Id = id, AdminId = adminId });
     }
 
-    public async Task DeleteAsync(int id, int adminId)
+    public async Task DeleteAsync(int id, Guid adminId)
     {
         await _db.ExecuteAsync(@"
         UPDATE notifications
@@ -92,6 +92,7 @@ public class NotificationRepository : INotificationRepository
         attachment_content = @AttachmentContent,
         attachment_mime = @AttachmentMime,
 
+        updated_by_admin_id = @UpdatedByAdminId,
         updated_at = NOW()
 
     WHERE notification_id = @NotificationId

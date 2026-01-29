@@ -13,16 +13,16 @@ public class UserNotificationService : IUserNotificationService
         _repo = repo;
     }
 
-    public Task<IEnumerable<Notification>> GetNotificationsAsync(int supplierId)
+    public Task<IEnumerable<Notification>> GetNotificationsAsync(Guid supplierId)
         => _repo.GetNotificationsAsync(supplierId);
 
-    public Task<Notification> GetByIdAsync(int id, int supplierId)
+    public Task<Notification?> GetByIdAsync(int id, Guid supplierId)
         => _repo.GetByIdAsync(id, supplierId);
 
-    public Task MarkAsReadAsync(int id, int supplierId)
+    public Task MarkAsReadAsync(int id, Guid supplierId)
         => _repo.MarkAsReadAsync(id, supplierId);
 
-    public Task<int> GetUnreadCountAsync(int supplierId)
+    public Task<int> GetUnreadCountAsync(Guid supplierId)
         => _repo.GetUnreadCountAsync(supplierId);
 
     public Task<(byte[] content, string mime, string name)> GetAttachmentAsync(int id)

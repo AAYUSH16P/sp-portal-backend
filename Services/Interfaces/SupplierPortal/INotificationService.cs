@@ -4,10 +4,10 @@ namespace DynamicFormService.DynamicFormServiceInterface;
 
 public interface INotificationService
 {
-    Task CreateAsync(CreateNotificationDto dto, int adminId);
-    Task UpdateAsync(UpdateNotificationDto dto, int adminId);
+    Task CreateAsync(CreateNotificationDto dto, Guid adminId);
+    Task UpdateAsync(UpdateNotificationDto dto, Guid adminId);
 
     // Optional but recommended
-    Task SendAsync(int notificationId, int adminId);
-    Task DeleteAsync(int notificationId, int adminId);
+    Task SendAsync(int notificationId, Guid adminId);
+    Task DeleteAsync(int notificationId, Guid adminId);
 }
