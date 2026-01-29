@@ -31,7 +31,7 @@ public class NotificationRepository : INotificationRepository
         return await _db.ExecuteScalarAsync<int>(sql, n);
     }
 
-    public async Task AddTargetsAsync(int notificationId, List<int> supplierIds)
+    public async Task AddTargetsAsync(int notificationId, List<Guid> supplierIds)
     {
         var sql = @"
         INSERT INTO notification_targets (notification_id, supplier_id)

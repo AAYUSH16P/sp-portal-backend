@@ -12,7 +12,7 @@ public class UpdateNotificationDto
     public string Priority { get; set; }
 
     public string TargetType { get; set; } // ALL | SPECIFIC
-    public List<int>? SupplierIds { get; set; }
+    public List<Guid>? SupplierIds { get; set; }
 
     public IFormFile? Attachment { get; set; }
     public bool RemoveAttachment { get; set; }
