@@ -1,5 +1,6 @@
 using System.Data;
 using System.Net;
+using Application.Interfaces;
 using Dapper;
 using Npgsql;
 using Hangfire;
@@ -13,7 +14,9 @@ using DynamicFormService.DynamicFormServiceInterface;
 using Application.Services;
 using Infrastructure.DataAccess.Dapper;
 using Infrastructure.Email;
+using Infrastructure.Repositories;
 using Infrastructure.Templates;
+using Services.Implementations.SupplierPortal;
 using Shared;
 
 
@@ -78,6 +81,13 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
 
 builder.Services.AddScoped<ITemplateRenderer, HtmlTemplateRenderer>();
+
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+builder.Services.AddScoped<IUserNotificationService, UserNotificationService>();
+
 
 //
 // ================================
